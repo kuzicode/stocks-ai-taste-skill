@@ -1,0 +1,33 @@
+# ── OS / 编辑器 ──
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+
+# ── Python ──
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# ── 内部工作文档（不随仓库分发）──
+docs/plan.md
+
+# ── 逐章精读笔记：源自第三方付费课程 wizzai101.com，出于版权考虑不公开分发 ──
+#    本地保留即可；skill 主流程只依赖 knowledge/frameworks/（原创综合资产）。
+#    如你已获授权要公开，删除下面 3 行即可。
+knowledge/part1_industry/
+knowledge/part2a_general/
+knowledge/part2b_ai_specific/
+
+# ── 运行期输出（用户各自生成，不纳入仓库；保留空目录占位）──
+/reports/*
+!/reports/.gitkeep
+/examples/*
+!/examples/.gitkeep
+
+# ── 运行期临时文件 ──
+*.tmp
+.cache/

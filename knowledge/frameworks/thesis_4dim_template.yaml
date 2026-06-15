@@ -1,0 +1,84 @@
+# 4 维 thesis 模板 — skill 的标准 schema
+# 主数据源：P2B-C2（4 维框架）+ P2B-C5（写 thesis 的纪律）
+# 核心铁律：「4 维不缺一维 —— 缺哪维, thesis 就在那里破。」
+#
+# 4 维 → 6 个内容字段（不含 ticker）映射：
+#   WHAT     = view + supports              （现在的叙事？什么证据？）
+#   WHY      = core_thesis + confidence     （我比市场多看到什么？多确信？）
+#   SO WHAT  = catalysts_90d + price_outlook（何时验证？价格怎样？）
+#   RISKS    = red_flags(text+trigger)      （错了何时认错离场？）
+#
+# 注意：所有含 $ 或 – 的值必须加引号，否则 YAML 解析报错。
+
+# ============ 填空模板（复制此块开始写）============
+ticker: ___
+
+# --- WHAT ---
+view: ___              # 必填且四选一: bull / bear / neutral / watching（不允许"看不出来"）
+supports:              # 3-5 条，每条必须带数字 + 带出处，可证伪
+  - "___"             # ✅ "NVDA 数据中心 Q4 FY26 营收 $35.6B，同比 +93%"  ❌ "AI 增长很快"
+  - "___"
+  - "___"
+
+# --- WHY ---
+core_thesis: |        # 1-2 句，C1 的 30 字 thesis 展开；点明"我比市场多看到/多敢赌的那一点"，非复述共识
+  ___
+confidence: ___       # high / medium / low —— 决定仓位大小；也是表达不确定性的合法出口
+
+# --- SO WHAT ---
+catalysts_90d:        # 90 天内带日期的可观察事件；若 90 天内无 catalyst → confidence 必须 low 或 view=watching
+  - date: "____-__-__"
+    event: "___"
+    look_for: "___"   # 公告当晚要盯的具体指标/阈值
+price_outlook:        # 三档都锚定在 current 上，bull/bear 写明触发条件
+  current: "$___"
+  base_90d: "$___ - $___"
+  bull_90d: "$___ - $___ (if ___)"
+  bear_90d: "$___ - $___ (if ___)"
+
+# --- RISKS ---
+red_flags:            # 2-3 条，每条 trigger 必须是可观察条件（把 thesis 真破 vs 市场噪音区分开）
+  - text: "___"
+    trigger: "___"    # ✅ "fwd PE>35x 且 hyperscaler capex 指引下调"  ❌ "估值偏高"（永远为真）
+  - text: "___"
+    trigger: "___"
+
+# ============ 完成自检（5 项全 yes 才算完成，任一 no 回去改）============
+# 1. view 是明确单点立场（不是"不确定"）
+# 2. 每条 support 都有数字 + 出处
+# 3. 每条 red_flag 都有可观察 trigger
+# 4. 90 天内至少有一个 catalyst（否则 confidence=low / view=watching）
+# 5. price_outlook 锚定在当前价上
+#
+# 反馈闭环：catalyst 把 thesis 钉在 90 天窗口 → 每季证实/证伪 → 校准 → 累积能力增长
+
+---
+# ============ 已填范例（NVDA，2026-05 财报前，源自 P2B-C2）============
+ticker: NVDA
+view: bull
+confidence: medium        # bull 但 medium：因有客户质量风险（CRWV 循环融资）
+core_thesis: |
+  NVDA 受益于持续的 AI 基建 capex 增长；Q1 FY27 财报验证需求强度，
+  但客户质量风险（CoreWeave 循环融资）值得关注。
+supports:
+  - "2026 AI capex 预测 $725B+，NVDA 主要受益者"
+  - "CoreWeave backlog 近 $100B，历史新高"
+  - "327 家大型机构在 13F 中持有 NVDA"
+  - "H200 中国出口许可批给约 10 家公司"
+catalysts_90d:
+  - date: "2026-05-20"
+    event: "Q1 FY27 财报"
+    look_for: "数据中心分部 >$30B，FY27 指引 >$200B，毛利率 >74%"
+  - date: "2026-06-19"
+    event: "GTC Asia"
+    look_for: "Rubin 平台出货时间表，Blackwell Ultra 量产进度"
+price_outlook:
+  current: "$225"
+  base_90d: "$215 - $235"
+  bull_90d: "$245 - $260 (if Q1 beat + 中国营收确认)"
+  bear_90d: "$190 - $205 (if Q1 miss 或 Samsung 罢工冲击 或 13F 持续抛售)"
+red_flags:
+  - text: "Samsung 5/18 罢工重启，18 天罢工或使全球 DRAM 减少 3-4%"
+    trigger: "罢工启动且持续 >7 天"
+  - text: "CRWV-NVDA 循环融资疑虑（NVDA 持仓约 $5B）"
+    trigger: "CRWV 客户集中度恶化 或 下次 13F 显示 NVDA 暴露扩大"

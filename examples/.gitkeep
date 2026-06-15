@@ -1,0 +1,2 @@
+# 4 维 thesis 结构化底稿输出目录。skill 运行时在此生成 <ticker>_<日期>.yaml。
+# 实际底稿默认不纳入仓库（见根目录 .gitignore）。

@@ -1,0 +1,150 @@
+# AI 产业链地图 — 结构化主数据
+# 主数据源：P1-C6（5 角色 + ~60 ticker）；价值捕获分数来自 P1-C7；硬件卡点来自 P1-C5
+# 用途：skill 给定一只票 → 在此定位其角色 / 子环节 / 护城河 / 上下游依赖 / 卡点
+meta:
+  source_chapters: [P1-C5, P1-C6, P1-C7]
+  read_date: 2026-06-15
+  ticker_count_confirmed: 52        # 原文称约 60，明确可列约 52
+  data_caveat: >
+    所有财务数字（毛利率/营业利润率/capex/份额）均为原文快照或估算，时变性高，
+    使用前必须回查最新 10-K / 10-Q / 财报电话会一手披露，勿直接引用本文件数值。
+  known_fixes:                       # 原文 WebFetch 转写疑误，已在本文件用正确名称
+    - "CEG = Constellation Energy（核电运营商），非 Centrus"
+    - "NBIS = Nebius，非 Nubis"
+    - "CRWV = CoreWeave，非 Crowdstrike"
+
+# 护城河来源优劣排序（P1-C7，定性启发式，非铁律）
+moat_source_ranking:
+  - 物理瓶颈          # 如 ASML EUV，无替代
+  - 生态_lock_in      # 如 NVDA CUDA，切换需重写代码
+  - 规模_资本密度     # 如 TSM / hyperscaler
+  - 品牌_用户         # 如 OpenAI C 端
+  - 无moat            # 如 SMCI 组装
+
+# 5 维价值捕获评分维度（P1-C7，每维 1-5）
+value_capture_dimensions: [毛利率, ROIC, Moat来源, 替代成本, 客户粘性]
+
+# 一只票可跨多个角色（如 VST=Downstream+Support；META/GOOGL=Downstream+Customer）
+roles:
+
+  - id: upstream
+    name_cn: 上游（设备 / 材料）
+    metaphor: 卖铲子的铲子
+    moat_depth: 最深（物理卡点 → 垄断）
+    margin_band: "EBITDA 约 20-40%；交期 5-10 年"
+    tickers:
+      - ticker: ASML
+        sub_segment: EUV 光刻
+        role_note: 光刻机 100% 份额
+        moat: 物理瓶颈（衍射极限）+ 25 年研发 + 荷兰出口管制 + Zeiss/Trumpf 光学生态
+        value_capture: { gross_margin: "50%", op_margin: "32%", roic: "30%+", moat_score: 5, tier: 王者 }
+        chokepoint: 荷兰对华 EUV 出口禁令
+      - ticker: TSM
+        sub_segment: 晶圆代工
+        role_note: 5nm/3nm/2nm 先进制造
+        moat: 资本密度（年 $40B+ capex）+ 工艺寡头
+        value_capture: { gross_margin: "55%", op_margin: "47%", roic: "高", moat_score: 4, tier: 二线 }
+        chokepoint: 台海地缘；AAPL 占营收约 25%
+      - { ticker: AMAT, sub_segment: 半导体设备, role_note: 沉积/刻蚀, moat: 资本密度+制程 know-how }
+      - { ticker: LRCX, sub_segment: 半导体设备, role_note: 刻蚀/清洗, moat: 先进节点壁垒 }
+      - { ticker: KLA, sub_segment: 半导体设备, role_note: 量检测, moat: 制程检测 know-how }
+      - { ticker: SNPS, sub_segment: EDA 设计软件, role_note: 逻辑/模拟设计, moat: 设计流程不可替代（与 CDNS 双寡头） }
+      - { ticker: CDNS, sub_segment: EDA 设计软件, role_note: 验证/仿真, moat: 与 SNPS 双寡头 }
+      - ticker: SK Hynix
+        sub_segment: HBM 存储
+        role_note: NVIDIA 70%+ HBM 供应
+        moat: HBM 验证难度 + 制造精度
+        chokepoint: HBM 验证（qualification）是进入 NVDA 供应链门槛
+      - { ticker: MU, sub_segment: HBM 存储, role_note: 次要 HBM 供应商, moat: Samsung 验证延迟受益, value_capture: { gross_margin: "35-45%", fwd_pe: "8-10x" } }
+      - { ticker: Samsung, sub_segment: HBM 存储, role_note: HBM3E（验证延迟）, moat: 相对 SK Hynix 验证滞后, status: 非美股 }
+      - { ticker: INTC, sub_segment: 代工/IDM, role_note: IFS 竞争代工, moat: 节点切换落后 TSM }
+
+  - id: midstream
+    name_cn: 中游（加速器 / 网络 / 光模块）
+    metaphor: 卖铲子
+    moat_depth: 深（生态锁定 + 架构主导）
+    margin_band: "毛利 40-75%"
+    tickers:
+      - ticker: NVDA
+        sub_segment: GPU / 加速器
+        role_note: H100/H200/Blackwell；数据中心约 88% 营收
+        moat: CUDA 20 年生态 + Mellanox 互联 + 平台（切换需重写 ML 代码）
+        value_capture: { gross_margin: "75%", op_margin: "60%", roic: "高", moat_score: 5, tier: 王者 }
+        depends_on: [ASML, TSM, SK Hynix, COHR, LITE, AVGO]   # 隐性上游依赖
+        chokepoint: HBM 单点供应；中国份额受出口管制（FY25 约 14%）
+      - { ticker: AMD, sub_segment: GPU / 加速器, role_note: MI300X 竞品, moat: ROCm 软件栈较弱, value_capture: { gross_margin: "50%", op_margin: "11-12%", moat_score: "2-3", tier: 弱 } }
+      - { ticker: AVGO, sub_segment: 网络/交换/定制硅, role_note: 高速互联 + 定制 ASIC, moat: 互联架构主导 }
+      - { ticker: MRVL, sub_segment: 存储/网络芯片, role_note: DPU 数据平面, moat: 基础设施芯片 }
+      - { ticker: ANET, sub_segment: 数据中心网络, role_note: 25/100/400G 交换 ASIC, moat: 超大规模客户偏好 }
+      - { ticker: COHR, sub_segment: 光模块, role_note: 400G/800G 光收发, moat: NVDA 依赖 + 光子供应, signal: 光模块涨价/积压=capex 加速先行信号 }
+      - { ticker: LITE, sub_segment: 光模块, role_note: 与 COHR 共供光子, moat: 光子学协同供应 }
+      - { ticker: QCOM, sub_segment: 边缘推理, role_note: 移动/边缘芯片, moat: 边缘场景 }
+      - { ticker: Cerebras, sub_segment: 定制芯片, role_note: 晶圆级 AI 加速, moat: 专有架构（小众）, status: 拟上市 }
+      - { ticker: SMCI, sub_segment: 服务器组装, role_note: AI 服务器代工, moat: 几乎无（组装门槛低）, value_capture: { gross_margin: "15%", op_margin: "9%", moat_score: 1, tier: 代工跟涨 }, warning: 跟涨不跟跌，仅短期 trade }
+
+  - id: downstream
+    name_cn: 下游（数据中心 / 云）
+    metaphor: 买铲子的
+    moat_depth: 浅-中（规模 + 资本密度 + 网络效应；云可替代）
+    margin_band: "营业利润 25-45%"
+    sub_groups:
+      hyperscaler: 通用云，客户分散
+      neocloud: AI 专用云，客户极度集中、风险高
+    tickers:
+      - { ticker: MSFT, sub_segment: hyperscaler(Azure), role_note: 云+OpenAI API（2026 后非独家）, moat: 企业销售锁定+切换成本, value_capture: { op_margin: "45%", moat_score: 4, tier: 二线 }, risk: capex/revenue 升至 35%+ 吞 FCF }
+      - { ticker: GOOGL, sub_segment: hyperscaler(GCP), role_note: 推理+训练+TPU, moat: 规模+自研硅, cross_role: customer(Gemini/DeepMind) }
+      - { ticker: AMZN, sub_segment: hyperscaler(AWS), role_note: Bedrock+SageMaker+Trainium, moat: 规模+自研硅, cross_role: customer }
+      - { ticker: ORCL, sub_segment: hyperscaler(OCI), role_note: 数据库+OpenAI 大单, moat: 规模, risk: "RPO 对 OpenAI 约 54% 集中；capex/revenue 逼近 40%；FCF 转负" }
+      - { ticker: META, sub_segment: 内部自用云, role_note: Llama 训练/推理, moat: 规模, cross_role: customer }
+      - { ticker: CRWV, sub_segment: neocloud, role_note: 纯 AI 算力租赁, moat: 客户高集中, value_capture: { gross_margin: "30%", op_margin: 亏损, moat_score: 低 }, risk: "约 60% 依赖 MSFT；与 NVDA 循环融资疑虑" }
+      - { ticker: NBIS, sub_segment: neocloud, role_note: 企业 AI 基建（Nebius）, moat: 新兴玩家, partner: Oracle OCI }
+      - { ticker: VST, sub_segment: neocloud+电力, role_note: 电力+冷却+算力一体化, cross_role: support }
+
+  - id: customer
+    name_cn: 客户（AI 实验室 / 基础模型）
+    metaphor: 用算力的
+    moat_depth: 浅（模型能力+训练数据+推理效率；API 易切换）
+    margin_band: "多为私募/亏损，盈利路径不清"
+    tickers:
+      - { entity: OpenAI, model: GPT-4o/o1, status: 私有（隐含 $80B+ ARR，严重亏损）, infra: Azure 独家→多云(MSFT/ORCL/AWS/CRWV/Google), moat: 品牌+用户+数据飞轮 }
+      - { entity: Anthropic, model: Claude, status: 私募融资, infra: 多云（AWS 为主）, moat: 模型能力+安全定位 }
+      - { entity: xAI, model: Grok, status: 私有, infra: 自建+自研芯片规划 }
+      - { entity: Mistral, model: 开源, status: 欧洲替代, infra: 自建 }
+      - { entity: DeepSeek, model: R1/V3, status: 中国，受出口管制, infra: 华为 Ascend }
+      - { entity: Google DeepMind, model: Gemini, status: GOOGL 内部, infra: GCP }
+      - { entity: Meta AI, model: Llama（开源）, status: META 内部, infra: 内部基建 }
+
+  - id: support
+    name_cn: 支撑（电力 / 冷却 / 地产）
+    metaphor: 配套
+    moat_depth: 中（地理 + 牌照 + 长约稀缺）
+    margin_band: "EBITDA 15-30%，长约锁定"
+    note: 电力是 2024 后真正的瓶颈，2025-2027 capex 节奏由电力可用性主导
+    tickers:
+      - { ticker: CEG, sub_segment: 核电, role_note: 核电 PPA 合约, moat: 核电牌照+长约稀缺, signal: 电力 PPA 公告→6-12 月后 GPU/HBM 需求 }
+      - { ticker: VST, sub_segment: 燃气电力, role_note: 燃气轮机+电力, cross_role: downstream }
+      - { ticker: GEV, sub_segment: 发电设备, role_note: 燃气轮机/风光, moat: 电网设备 }
+      - { ticker: VRT, sub_segment: 液冷, role_note: 热管理, moat: 高密度 GPU 机架必需 }
+      - { ticker: ETN, sub_segment: 配电, role_note: PDU/UPS, moat: 数据中心配电 }
+      - { ticker: HUBB, sub_segment: 电气基建, role_note: 连接器/布线, moat: 模块化数据中心 }
+      - { ticker: EQIX, sub_segment: 数据中心 REIT, role_note: 地产+托管, moat: 算力布点稀缺 }
+      - { ticker: DLR, sub_segment: 数据中心 REIT, role_note: 全球布局, moat: 算力布点 }
+      - { ticker: IRM, sub_segment: 数据中心 REIT, role_note: 托管与管理, moat: 协同托管 }
+
+# 关键卡点链（任一断裂沿链向下游级联）
+chokepoint_chains:
+  - id: nvda_gpu_supply
+    path: "ASML(100% EUV) → TSM(独家 5/3nm) + AMAT/LRCX + SK Hynix(70% HBM)/MU + SNPS/CDNS + COHR/LITE → NVDA → {MSFT/GOOGL/AMZN/ORCL/CRWV}"
+    break_effect: 任一环断裂 → NVDA 出货受限
+  - id: openai_infra_2026
+    path: "OpenAI(非独家) → MSFT/ORCL/AWS/CRWV/Google → GPU 组合 NVDA~70% + AMD~20% + AWS Trainium~10%"
+    break_effect: MSFT 下游护城河被削弱，OpenAI 议价权提升
+  - id: power_supply
+    path: "CEG(核电 PPA)/VST(燃气)/GEV(可再生) → 数据中心电网 → 超大规模 capex"
+    break_effect: 电力不足 → 数据中心 capex 延迟
+
+# 全链 de-rate 触发器（leading indicator）
+chain_derate_triggers:
+  - "hyperscaler capex 指引持平或下调（capex 二阶导=0）"
+  - "应用层 revenue 无法支撑约 $725B/yr capex（见 P1-C8）"
+  - "主要云厂商 FY27 capex 指引 YoY 增速 <10%"
