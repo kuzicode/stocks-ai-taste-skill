@@ -7,8 +7,10 @@
 
 ## 特性
 - **产业链定位**：5 角色（上游设备/中游加速器/下游云/模型客户/电力支撑）× ~50 ticker × 护城河 × 卡点
+- **价格主源 = Hyperliquid 美股 perp**（`scripts/hl_price.py`，mark/oracle + 日线 + 资金费 + 最大杠杆，无需 key；未上则回退现货）
 - **4 维 thesis**（WHAT / WHY / SO WHAT / RISKS）+ Python 校验器机检（support 必带数字、red_flag 必带触发器、90 天内必有 catalyst）
-- **估值 + 自检**：反向 DCF / 安全边际 + 5 心智模型 + 6 行为偏差 + 历史 base rate
+- **估值 + 自检**：反向 DCF / 安全边际 + **机构目标价交叉锚** + 5 心智模型 + 6 行为偏差 + 历史 base rate
+- **双角度结论**：🎯 长期（正股长持：仓位+加仓区）｜ ⚡ 短期（Hyperliquid 杠杆：方向+杠杆+入场/止损/止盈+资金费）
 - **双输出**：交易员速览（`reports/`，人读）+ 结构化底稿（`examples/`，机读）
 
 ## 判别力示例（同样"低 PE"，结论却相反）
@@ -24,11 +26,11 @@
 输入 ticker
  → 0 一句话 thesis（写不出则停）
  → 1 industry_chain_map.yaml 定位
- → 2 拉实时数据（知识库仅 2025-26 快照，必须实时覆盖）
+ → 2 拉实时数据（价格主源 Hyperliquid + 机构目标价；知识库仅 2025-26 快照，必须实时覆盖）
  → 3 填 4 维 thesis + 校验器机检
- → 4 估值 + 安全边际
+ → 4 估值 + 安全边际 + 机构目标价交叉锚
  → 5 心智模型 + 偏差 + base rate
- → 6 输出交易员研报
+ → 6 输出双角度结论（长期正股 / 短期 HL 杠杆）+ 交易员研报
 ```
 
 ## 安装
@@ -58,7 +60,7 @@
 SKILL.md              skill 主体（7 步 + I/O 契约）
 AGENTS.md / CLAUDE.md 各 agent harness 入口
 assets/               交易员研报模板
-scripts/              4 维 thesis 校验器
+scripts/              hl_price.py（价格主源）+ validate_thesis.py（4 维校验器）
 knowledge/frameworks/ ★ 原创综合资产（产业链地图 / thesis 模板 / 估值 / 心智模型 / SOP）
 docs/skill_design.md  设计依据
 ```

@@ -30,9 +30,15 @@
   one_liner_thesis: "≤30 字",
   chain_position: { role, sub_segment, moat_source, value_capture_tier, depends_on[], concentration_risks[] },
   thesis_4dim: <填好的 thesis_4dim_template.yaml>,
-  valuation: { method, fair_value_range, implied_growth, margin_of_safety_entry },
+  valuation: { method, fair_value_range, implied_growth, margin_of_safety_entry,
+               analyst_targets: { high, median, low, coverage, source } },
+  hl_market: { mark, oracle, funding_annual_pct, max_leverage },
   cross_check: { moat_score, circle_of_competence: pass|fail, inversion_scenarios[], bias_flags[] },
-  decision: { call: buy|hold|sell, target_position_pct, monitors: { catalysts[], red_flag_triggers[] } },
+  decision: {
+    long_term:  { call: buy|hold|sell, target_position_pct, add_zone, rationale },
+    short_term: { direction: long|short|观望, leverage, entry, stop_loss, take_profit, funding_cost_note, rationale },
+    monitors: { catalysts[], red_flag_triggers[] }
+  },
   data_freshness_note
 }
 ```
@@ -43,11 +49,13 @@
 - **逐章笔记**：作为深挖时的 RAG 检索源（按 tag / chapter 检索）。
 
 ## 5. 需要的外部数据源（知识库之外）
-- 实时行情与估值倍数（fwd P/E、EV/Rev 等）。
+- **实时行情主源 = Hyperliquid 美股 perp**（`scripts/hl_price.py`，dex=`xyz`，符号 `xyz:<TICKER>`）：`markPx`/`oraclePx` + 日线 `candleSnapshot` + `funding`（短期杠杆成本）+ `maxLeverage`，公开无需 key；未上 HL 才回退 WebSearch 现货价。
+- **机构/分析师目标价**（高/中/低 + 家数 + 来源）：与自算公允价并列做交叉锚。
+- 估值倍数（fwd P/E、EV/Rev 等）。
 - 最新财报：10-K/10-Q、电话会、guidance、segment revenue、RPO/backlog、capex 及二阶导、客户集中度。
 - catalyst 日历（财报日、行业大会如 GTC）；财年口径核对。
 - 13F（注意滞后 6 周、不含空头/期权）。
-- 候选工具：WebSearch / WebFetch / 财经数据 API。
+- 候选工具：`scripts/hl_price.py`（价格主源）/ WebSearch / WebFetch / 财经数据 API。
 
 ## 6. SKILL.md 骨架草图（仅蓝图，未实现）
 ```

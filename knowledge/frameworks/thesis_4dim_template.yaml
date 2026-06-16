@@ -31,10 +31,15 @@ catalysts_90d:        # 90 天内带日期的可观察事件；若 90 天内无 
     event: "___"
     look_for: "___"   # 公告当晚要盯的具体指标/阈值
 price_outlook:        # 三档都锚定在 current 上，bull/bear 写明触发条件
-  current: "$___"
+  current: "$___"     # 价格主源 = Hyperliquid mark（hl_price.py）；未上 HL 则现货并注明
   base_90d: "$___ - $___"
   bull_90d: "$___ - $___ (if ___)"
   bear_90d: "$___ - $___ (if ___)"
+  analyst_targets:    # 机构/分析师 12 个月目标价（外部交叉锚，可选附加字段）
+    high: "$___"
+    median: "$___"
+    low: "$___"
+    source: "___（机构/平台 + 日期）"
 
 # --- RISKS ---
 red_flags:            # 2-3 条，每条 trigger 必须是可观察条件（把 thesis 真破 vs 市场噪音区分开）
@@ -77,6 +82,11 @@ price_outlook:
   base_90d: "$215 - $235"
   bull_90d: "$245 - $260 (if Q1 beat + 中国营收确认)"
   bear_90d: "$190 - $205 (if Q1 miss 或 Samsung 罢工冲击 或 13F 持续抛售)"
+  analyst_targets:
+    high: "$280"
+    median: "$245"
+    low: "$170"
+    source: "示例值（占位）——实跑须 WebSearch 取最新机构目标价"
 red_flags:
   - text: "Samsung 5/18 罢工重启，18 天罢工或使全球 DRAM 减少 3-4%"
     trigger: "罢工启动且持续 >7 天"

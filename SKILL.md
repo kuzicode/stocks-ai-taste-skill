@@ -39,7 +39,18 @@ allowed-tools: Read, WebSearch, WebFetch, Bash, Write
 若 target 不在地图中：用其业务归入最接近的角色，并标注「地图外，需自建定位」。
 
 ### Step 2 · 拉实时数据（必做，知识库之外）
-用 WebSearch / WebFetch 取 `as_of_date` 前后的一手数据：最近季度营收/毛利/营业利润率、capex 及**二阶导**、guidance、RPO/backlog 及客户集中度、估值倍数（fwd P/E、EV/Rev、PEG、Rule of 40）、近 90 天 catalyst 日历（财报日、行业大会）。
+
+**价格主源 = Hyperliquid 美股 perp（优先，无需 key）。** 先跑：
+```bash
+python3 scripts/hl_price.py <TICKER> --candles 20    # 加 --json 取机读
+```
+取 `markPx`/`oraclePx`（→ `price_outlook.current`、短期杠杆入场/止损锚）、`funding`（多头持仓成本，年化进短期成本）、`maxLeverage`（短期杠杆上限）、日线区间。
+- 退出码 **3** = 该 ticker 未上 Hyperliquid `xyz` → **回退 WebSearch/WebFetch 取现货价**，并在 `data_freshness_note` 标注「价格源=现货，非 HL」。
+- HL 是衍生品 mark，与现货可有基差；若与现货明显背离，二者都记并以现货为估值基准。
+
+**机构目标价（必拉）**：用 WebSearch 取分析师/机构 12 个月目标价的 **高 / 中位 / 低 + 覆盖家数 + 代表机构与日期**（如 MarketBeat/TipRanks/Koyfin/Morningstar 公允价），作为 Step 4 自算 `fair_value_range` 之外的**外部交叉锚**，回填到 `analyst_targets`。
+
+再用 WebSearch / WebFetch 取 `as_of_date` 前后的一手基本面：最近季度营收/毛利/营业利润率、capex 及**二阶导**、guidance、RPO/backlog 及客户集中度、估值倍数（fwd P/E、EV/Rev、PEG、Rule of 40）、近 90 天 catalyst 日历（财报日、行业大会）。
 先核对**财年**（NVDA Feb-Jan、MSFT Jul-Jun、ORCL Jun-May…）再定 catalyst 时点。术语口径查 `knowledge/frameworks/valuation_toolkit.md`。
 
 ### Step 3 · 填 4 维 thesis
@@ -58,6 +69,7 @@ python3 scripts/validate_thesis.py <thesis.yaml> --as-of <as_of_date>
 ### Step 4 · 估值 + 安全边际（`knowledge/frameworks/valuation_toolkit.md`）
 - AI/成长股优先**反向 DCF**：反推当前价隐含增长，判断是否合理；辅以多重估值与历史/同业对比。
 - 给**公允价值区间**（非单点）；安全边际 = 区间下方 20-30% 才入场。
+- **机构目标价交叉锚**：把 Step 2 的 `analyst_targets`（高/中/低）与自算区间并排比，说明分歧来源（共识乐观/悲观、口径差异）；自算与机构差距大时优先解释分歧，不盲从。
 - 把关键术语数字（capex 二阶导、RPO 集中度、GAAP/non-GAAP gap、Rule of 40）回填进 supports / red_flags。
 
 ### Step 5 · 交叉验证 + 偏差自检（`knowledge/frameworks/mental_models_and_biases.md`）
@@ -65,10 +77,23 @@ python3 scripts/validate_thesis.py <thesis.yaml> --as-of <as_of_date>
 - 6 偏差自检：view 是确认偏误吗？price_outlook 锚定了买入价吗？是否 FOMO/近因驱动？
 - base rate：用 dotcom/mobile 锚 bear 档；2026-28 应用 ROI 滞后窗口，−30%~−50% 回撤纳入 bear 情景。
 
-### Step 6 · 仓位 + 输出判断（P2A-C4）
-- 仓位 ≈ 信念 × 赔率 ÷ 风险，由 confidence 映射；约束：单仓 ≤15-20%、留 15-20% 现金、板块 ≤50%、供应链 ≤40%（AI 供应链相关性高，别低估）。
-- 论点失效（red_flag trigger 触发）即退出。
-- 按下方契约输出。
+### Step 6 · 仓位 + 输出判断（双角度，P2A-C4）
+结论必须分**两个独立角度**，因为同一 thesis 在不同久期/工具下动作可相反：
+
+**A. 长期 · 正股长期持有（股票账户）**
+- call = buy / hold / sell；仓位 ≈ 信念 × 赔率 ÷ 风险，由 confidence 映射。
+- 约束：单仓 ≤15-20%、留 15-20% 现金、板块 ≤50%、供应链 ≤40%（AI 供应链相关性高，别低估）。
+- 给**加仓区**（= 安全边际入场价，区间下方 20-30%）；长期看护城河 + value_capture_tier 决定久期，弱护城河/周期顶 → 不进长持。
+
+**B. 短期 · Hyperliquid 合约杠杆（perp）**
+- direction = long / short / 观望（看 90 天 catalyst 赔率 + 价格剧本，而非长期 thesis）。
+- **杠杆**：给保守区间且 **≤ `hl_price.py` 返回的 maxLeverage**（默认建议远低于上限，如 2-5x）；高波动/财报前进一步降杠杆。
+- 用 HL `mark` 锚定：**入场区 / 止损（必给，破 bear 触发即砍）/ 止盈（base→bull 区间）**。
+- **资金费成本**：引用年化 funding；做多且 funding 高（如年化 >20%）要在赔率里扣，必要时改观望或缩持仓时间。
+- 触发条件对齐 `price_outlook` 的 bull/bear `if`；red_flag trigger 触发即平仓。
+- ⚠️ 杠杆放大双向风险，强制止损；这是 trade 不是投资，仓位与正股分账管理。
+
+两角度可不一致（如长期 hold 观望、短期博财报小杠杆 long；或长期 buy、短期因 funding 高而观望），须各自给理由。按下方契约输出。
 
 ## 输出渲染（由 `report` 决定）
 - **structured**：下方 §输出契约 的 YAML（存档/机读，进 `examples/`）。
@@ -94,18 +119,40 @@ valuation:
   fair_value_range: "$___ - $___"
   implied_growth: "___%"
   margin_of_safety_entry: "$___"   # 区间下方 20-30%
+  analyst_targets:                 # 机构/分析师 12 个月目标价（外部交叉锚）
+    high: "$___"
+    median: "$___"
+    low: "$___"
+    coverage: "___ 家"
+    source: "___（机构/平台 + 日期）"
+hl_market:            # Hyperliquid 价格主源快照（hl_price.py；未上 HL 则注明现货回退）
+  mark: "$___"
+  oracle: "$___"
+  funding_annual_pct: "___%"
+  max_leverage: "___x"
 cross_check:
   moat_score: "_/4"
   circle_of_competence: pass | fail
   inversion_scenarios: [___]       # 5 个失败场景+触发器
   bias_flags: [___]                # 自检发现的偏差
 decision:
-  call: buy | hold | sell
-  target_position_pct: "___%"
+  long_term:           # 正股长期持有（股票账户）
+    call: buy | hold | sell
+    target_position_pct: "___%"
+    add_zone: "$___ - $___"        # 安全边际加仓区（区间下方 20-30%）
+    rationale: "___"
+  short_term:          # Hyperliquid 合约杠杆（perp）
+    direction: long | short | 观望
+    leverage: "___x"               # 保守区间，≤ maxLeverage
+    entry: "$___ - $___"           # 锚 HL mark
+    stop_loss: "$___"              # 必给
+    take_profit: "$___ - $___"
+    funding_cost_note: "年化 ___%，多头持仓成本（已计入赔率）"
+    rationale: "___"
   monitors:
     catalysts: [{date, look_for}]
     red_flag_triggers: [___]
-data_freshness_note: "数据核实于 <as_of_date>，来源：<...>"
+data_freshness_note: "数据核实于 <as_of_date>，价格源：<HL mark / 现货回退>，来源：<...>"
 ```
 
 最后附 `knowledge/frameworks/analysis_checklist.md` 的 **Review 节奏**（周/月/季）提醒。
@@ -117,6 +164,7 @@ data_freshness_note: "数据核实于 <as_of_date>，来源：<...>"
 - 心智模型 + 偏差 + base rate：`knowledge/frameworks/mental_models_and_biases.md`
 - 主流程 SOP：`knowledge/frameworks/analysis_checklist.md`
 - 交易员速览模板：`assets/trader_report_template.md`（`report: trader` 用）
+- 价格主源取数：`scripts/hl_price.py`（Hyperliquid 美股 perp，mark/oracle + 日线，无需 key）
 - thesis 校验器：`scripts/validate_thesis.py`
 - 回归样例（thesis 底稿 YAML）：`examples/`（nvda / mu，2026-06-15）
 - 最终交易员研报（带日期独立文件）：`reports/<TICKER>_<as_of_date>.md`
