@@ -1,72 +1,95 @@
-# ai-stock-analysis · AI 产业链股票分析 Skill
+# ai-stock-analysis
 
-给定一只 AI 产业链个股 → **产业链定位 → 拉实时数据 → 4 维 thesis 判断 → 输出交易员视角研报**。
-可在 **Claude Code / Codex / Hermes** 等主流 agent 对话中调用。
+统一股票研究 skill：给定股票代码、公司名或行业主题，先识别市场，再走对应分析路径。
 
-> ⚠️ 分析框架工具，**非投资建议**；数字以一手财报为准。
+- **美股/海外**：AI 产业链定位、实时行情、4 维 thesis、估值、安全边际、长期正股与短期 Hyperliquid 交易判断。
+- **A 股**：最新数据源、产业链路径、12 章深度研报、DCF/DDM/杜邦估值、长期配置与短期交易判断。
 
-## 特性
-- **产业链定位**：5 角色（上游设备/中游加速器/下游云/模型客户/电力支撑）× ~50 ticker × 护城河 × 卡点
-- **价格主源 = Hyperliquid 美股 perp**（`scripts/hl_price.py`，mark/oracle + 日线 + 资金费 + 最大杠杆，无需 key；未上则回退现货）
-- **4 维 thesis**（WHAT / WHY / SO WHAT / RISKS）+ Python 校验器机检（support 必带数字、red_flag 必带触发器、90 天内必有 catalyst）
-- **估值 + 自检**：反向 DCF / 安全边际 + **机构目标价交叉锚** + 5 心智模型 + 6 行为偏差 + 历史 base rate
-- **双角度结论**：🎯 长期（正股长持：仓位+加仓区）｜ ⚡ 短期（Hyperliquid 杠杆：方向+杠杆+入场/止损/止盈+资金费）
-- **双输出**：交易员速览（`reports/`，人读）+ 结构化底稿（`examples/`，机读）
+> 仅作研究框架与信息整理，不构成投资建议。进入结论的数字必须以本次核实的一手来源为准。
 
-## 判别力示例（同样"低 PE"，结论却相反）
-| 标的 | 护城河 | 估值 | 判断 |
-|---|---|---|---|
-| NVDA | 强 (CUDA) | 便宜 23x | 🟢 买入 = 错杀 |
-| MU | 弱 (周期) | 便宜 9x | ⚠️ 观望 = 周期顶陷阱 |
-| MRVL | 中 (socket风险) | 贵 55-66x | 🟡 不追高 = 价格透支 |
-| SPCX | 非 AI 链 | 极端 | ⚠️ 自动识别越界 → 通用模型速览 |
+## 快速使用
 
-## 流程（7 步，详见 [`SKILL.md`](SKILL.md)）
+```text
+分析 NVDA
+分析 MU report=trader
+分析 ASML mode=quick
+分析 盛美上海
+分析 688981
+分析 半导体设备 A 股对比
 ```
-输入 ticker
- → 0 一句话 thesis（写不出则停）
- → 1 industry_chain_map.yaml 定位
- → 2 拉实时数据（价格主源 Hyperliquid + 机构目标价；知识库仅 2025-26 快照，必须实时覆盖）
- → 3 填 4 维 thesis + 校验器机检
- → 4 估值 + 安全边际 + 机构目标价交叉锚
- → 5 心智模型 + 偏差 + base rate
- → 6 输出双角度结论（长期正股 / 短期 HL 杠杆）+ 交易员研报
+
+默认输出：
+
+- 美股/海外报告：`reports/<TICKER>_<YYYY-MM-DD>.md`
+- 美股/海外结构化底稿：`examples/<ticker>_<YYYY-MM-DD>.yaml`
+- A 股报告：`reports/<代码或公司>_<YYYY-MM-DD>.md`
+
+`reports/` 和 `examples/` 是运行期产物，默认不入库。
+
+## 市场分流
+
+`SKILL.md` 先判断市场：
+
+- A 股代码或中文 A 股公司名 → 读取 `knowledge/markets/a_share_workflow.md`
+- 美股/海外 ticker 或公司名 → 读取 `knowledge/frameworks/analysis_checklist.md`
+- 不确定市场 → 先问用户确认，不猜
+
+A 股不使用 Hyperliquid 合约逻辑；美股/海外继续优先使用 `scripts/hl_price.py` 获取 Hyperliquid 美股 perp 行情，未覆盖时回退现货价格。
+
+## 核心文件
+
+```text
+SKILL.md                         # 统一入口与市场路由
+AGENTS.md                        # agent 协作规则
+assets/
+  trader_report_template.md      # 美股/海外交易员速览模板
+  a_share_report_template.md     # A 股 12 章 Markdown 模板
+knowledge/frameworks/            # 美股/海外 AI 产业链框架
+knowledge/markets/               # A 股流程、数据源、产业链路径
+scripts/
+  hl_price.py                    # Hyperliquid 美股 perp 行情
+  validate_thesis.py             # 美股/海外 4 维 thesis 校验
+  validate_a_share_report.py     # A 股研报结构校验
 ```
 
 ## 安装
-依赖：Python 3.8+ 与 `pyyaml`（仅校验器需要，`pip install pyyaml`）；agent 需具备联网搜索能力（Step 2）。
 
-| Agent | 安装 / 调用 |
-|---|---|
-| **Claude Code** | `git clone <repo> ~/.claude/skills/ai-stock-analysis` → 对话说「分析 NVDA」或 `/ai-stock-analysis`（靠 SKILL.md frontmatter 自动匹配） |
-| **Codex** | `git clone <repo> && cd` → 运行 `codex` → 读 `AGENTS.md`「运行方式」驱动 |
-| **Hermes / 通用** | 把 `SKILL.md` 载入上下文 + 给文件读取&联网工具 + 工作目录设为仓库根 |
+把本仓库放到对应 agent 的 skills 目录，或直接在仓库根目录运行 agent。
 
-## 使用
-```
-分析 NVDA                  # 默认：先交易员速览，再附结构化底稿
-分析 MU report=trader      # 只要人读研报
-分析 ASML report=structured # 只要 4 维 thesis YAML
-分析 TSM mode=quick        # 精简版
-```
-- 人读研报 → `reports/<TICKER>_<日期>.md`（格式见 [`assets/trader_report_template.md`](assets/trader_report_template.md)）
-- 结构化底稿 → `examples/<ticker>_<日期>.yaml`，校验：`python3 scripts/validate_thesis.py <底稿> --as-of <日期>`
-- 非 AI 链标的（如 SPCX=SpaceX）自动改用通用投资模型 + 显著免责，不强套 AI 框架
-
-> `reports/` 与 `examples/` 为运行期输出目录，内容默认不入库（见 `.gitignore`），克隆下来是空的。
-
-## 结构
-```
-SKILL.md              skill 主体（7 步 + I/O 契约）
-AGENTS.md / CLAUDE.md 各 agent harness 入口
-assets/               交易员研报模板
-scripts/              hl_price.py（价格主源）+ validate_thesis.py（4 维校验器）
-knowledge/frameworks/ ★ 原创综合资产（产业链地图 / thesis 模板 / 估值 / 心智模型 / SOP）
-docs/skill_design.md  设计依据
+```bash
+git clone <repo> ~/.codex/skills/ai-stock-analysis
+git clone <repo> ~/.claude/skills/ai-stock-analysis
+git clone <repo> ~/.openclaw/skills/ai-stock-analysis
 ```
 
-## 时效 · 免责 · 版权
-- 知识库内容截至原文 **2025-26**，均为快照；skill 在 Step 2 **强制拉实时数据**覆盖。
-- 仅作分析框架演示，**不构成投资建议**，决策与风险自负。
-- `knowledge/frameworks/` 为本项目**原创综合**；方法论概念源自 wizzai101.com，其逐章精读笔记出于版权考虑**默认不公开分发**（`.gitignore` 已屏蔽）。
-- 仓库未预置 `LICENSE`，请按需自选。
+运行环境建议：
+
+- Python 3.8+
+- A 股校验器只依赖标准库
+- `validate_thesis.py` 需要 PyYAML
+- agent 需要文件读写、Shell、联网检索/抓取能力
+
+## 验证
+
+```bash
+python3 scripts/validate_thesis.py examples/<ticker>_<date>.yaml --as-of <date>
+python3 scripts/validate_a_share_report.py reports/<code_or_name>_<date>.md
+```
+
+A 股报告校验会检查：
+
+- 12 个章节是否齐全
+- WACC、FCF、DCF、DDM、PE/PB/PEG、杜邦是否出现
+- 产业链路径、长期配置、短期交易、止损止盈是否出现
+- 数据核实日期和主要来源是否出现
+- 是否疑似泄露手机号、访问令牌、外发频道 ID、代理地址等敏感配置
+
+## 数据与隐私
+
+- 所有报告必须标明数据核实日期和主要来源。
+- skill 不内置账号、访问令牌、外发频道 ID、私聊 ID 或代理地址。
+- 不自动发送报告到外部渠道；如需外发，必须由用户在当次会话明确确认。
+
+## 版权与边界
+
+`knowledge/frameworks/` 为项目整理的研究框架；逐章精读笔记和运行期报告默认不公开分发。仓库未预置 `LICENSE`，发布前请按需补充。

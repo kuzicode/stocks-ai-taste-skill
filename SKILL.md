@@ -1,171 +1,103 @@
 ---
 name: ai-stock-analysis
 description: >
-  分析 AI 产业链个股并输出投资判断。当用户要求分析/研究一只 AI 相关股票或板块
-  （如「分析 NVDA」「看看光模块」「ASML 现在能买吗」「评估 CoreWeave 风险」），
-  或要为某 AI 标的写投资 thesis、判断买/持/卖、做产业链定位与估值时使用。
-  流程：产业链定位 → 拉实时数据 → 填 4 维 thesis → 估值+安全边际 → 心智模型/偏差交叉验证 → 输出结构化判断。
-allowed-tools: Read, WebSearch, WebFetch, Bash, Write
+  股票研究与投研报告 skill。用于分析/研究单只股票、公司、行业或产业链标的，
+  包括美股/海外 AI 产业链股票（如 NVDA、ASML、MU、CoreWeave、光模块、算力链）
+  和 A 股公司/代码（如 688082、688981、盛美上海、中芯国际、半导体设备、国产算力）。
+  先识别市场并分流：美股/海外走 AI 产业链 thesis + 实时行情 + 长短期判断；
+  A 股走最新数据源 + 产业链路径 + 12 章深度研报 + DCF/DDM/杜邦估值 + 长期/短期评价。
 ---
 
-# AI 产业链股票分析 skill
+# 股票研究路由 skill
 
-把一只 AI 产业链个股转成一份**可执行、可证伪、可季度复盘**的投资判断。
-方法论与数据底座全部在本 skill 同目录的 `knowledge/`，**执行时按需 Read 加载**，不要凭记忆编造数字。
+把用户给定的 `target` 先分成 **A 股** 或 **美股/海外市场**，再加载对应工作流。不要混用数据源；不要把 A 股标的套 Hyperliquid 合约逻辑。
 
 ## 输入
-`{ target: <ticker/公司名/主题>, as_of_date: <YYYY-MM-DD，默认今天>, mode: full | quick, report: both | trader | structured }`
-- `mode`：`full`（默认）跑完整 7 步；`quick` 只做 Step 0/1/3 精简版 + 结论，跳过深度估值。
-- `report`：输出渲染（默认 `both`）。`structured`=只出契约 YAML；`trader`=只出交易员速览；`both`=先速览后契约。
-  用户说「给交易员看 / 通俗 / 简单报告」时用 `trader`。
+`{ target: <ticker/代码/公司名/主题>, as_of_date: <YYYY-MM-DD，默认今天>, mode: full | quick, report: both | trader | structured | a_share_deep }`
 
-## 铁律（先读）
-1. **数据时效**：`knowledge/` 知识截至原文 2025-26，其中所有财务数字均为**快照/估算**。凡进入结论的具体数字，必须在 Step 2 用 WebSearch/最新财报**重新核实**；不可直接引用知识库数值。输出必须带 `data_freshness_note`。
-2. **4 维不缺一维**：thesis 缺哪维就在哪破。Step 3 的 5 项自检必须全过（用校验器机检）。
-3. **先 WHAT 后 WHY**：写不出 ≤30 字的一句话 thesis 就停，不强行建仓。
-4. **方法 vs 事实**：`knowledge/part2b_ai_specific/c4_walkthrough.md` 的 NVDA 数字是教学示例（口径矛盾），只学方法，别当事实。
+- `mode=full`：默认完整流程；`quick`：事件速评/简版，但仍要标明数据来源和失效条件。
+- `report`：
+  - 美股/海外默认 `both`，可用 `trader` 输出交易员速览。
+  - A 股默认 `a_share_deep`，生成 Markdown 到 `reports/`。
 
-## 执行流程（7 步，对应 `knowledge/frameworks/analysis_checklist.md`）
+## 文件命名规范（两市统一）
 
-### Step 0 · 一句话 thesis（P2B-C1）
-用 ≤30 字说清该票**当下解决什么具体问题（WHAT）**，再说你比市场更敢下注什么（WHY）。写不出 → 停并说明原因。
-⚠️ 产业位置 ≠ 投资 thesis（同一卡位价格可天差地别）。
+输出文件名格式：`reports/<日期> - <标的> - <市场>.md`
 
-### Step 1 · 产业链定位
-`Read knowledge/frameworks/industry_chain_map.yaml`，确定 target 的：
-- 角色（Upstream/Midstream/Downstream/Customer/Support）、子环节、是否跨角色；
-- 护城河来源 + 5 维 value_capture 分数（王者/二线/代工 → 决定持仓久期）；
-- `depends_on` 上游依赖 + `chokepoint`/集中度风险 + 所属 `chokepoint_chains`。
-若 target 不在地图中：用其业务归入最接近的角色，并标注「地图外，需自建定位」。
+- `<日期>`：`YYYY-MM-DD`（= `as_of_date`）。
+- `<标的>`：A 股用 `中文简称 代号`（如 `盛美上海 688082`）；美股/海外用 `TICKER`（如 `NVDA`）。
+- `<市场>`：英文。A 股 = `A-share`；美股/海外 = `US`。
+- 示例：`reports/2026-06-26 - 盛美上海 688082 - A-share.md`、`reports/2026-06-26 - NVDA - US.md`。
+- 文件名含空格，跑校验/命令时整体加引号。
 
-### Step 2 · 拉实时数据（必做，知识库之外）
+## Step 0 · 市场识别（必须先做）
 
-**价格主源 = Hyperliquid 美股 perp（优先，无需 key）。** 先跑：
+按以下顺序判断：
+
+1. **A 股**：代码形态为 `600/601/603/605/688/689/000/001/002/003/300/301/430/8xx/920`，带 `.SH/.SZ/.BJ`，或中文 A 股公司名（如盛美上海、中芯国际、贵州茅台、宁德时代）。
+2. **美股/海外**：英文 ticker（如 `NVDA`、`MU`、`ASML`、`TSM`、`MSFT`）、海外上市公司名、或明确说美股/港股/海外。
+3. **不确定**：先问用户确认交易市场；不要猜。
+
+识别后只走对应路径：
+
+- A 股：读取 `knowledge/markets/a_share_workflow.md`，并按需读取 `a_share_data_sources.md`、`a_share_industry_chain_map.yaml`、`assets/a_share_report_template.md`。
+- 美股/海外：读取 `knowledge/frameworks/analysis_checklist.md`，沿用现有 AI 产业链 7 步流程。
+
+## 共性铁律
+
+1. **最新数据优先**：所有进入结论的价格、财务、估值、股东、客户、订单、capex、技术指标，都必须在本次执行中核实并标明来源和日期。
+2. **数字可追溯**：报告里不能用无出处的核心数字；不确定就写“不足以核实”，不要补脑。
+3. **先 thesis 后动作**：写不出一句具体 thesis，就不要给买卖建议。
+4. **长期和短期分账**：长期配置价值与短期交易窗口必须分开判断，可得出不同结论。
+5. **隐私保护**：skill 不内置手机号、账号、访问令牌、外发频道 ID、私聊 ID、代理地址；不得自动发送报告到外部渠道，除非用户在当次会话明确提供并确认。
+
+## A 股路径（路由到 `knowledge/markets/a_share_workflow.md`）
+
+适用：A 股个股深度报告、行业/对比报告、财报/事件速评。
+
+核心输出：
+
+- 默认写入 `reports/<日期> - <中文简称 代号> - A-share.md`（见上方命名规范）。
+- 深度报告包含 12 章：公司概况、五年经营、客户结构、股东结构、管理团队、行业格局、研发/capex、风险、估值、竞争对手、技术分析、综合结论。
+- 估值章节必须包含 WACC 逐步计算、FCF 基准推导、ROE×留存率增长锚、DCF 敏感性矩阵、DDM 三阶段、PE/PB/PEG 相对估值、杜邦三因子。
+- 产业链路径必须写清：上游依赖 → 公司卡位 → 下游客户/场景 → 卡点/替代/政策风险 → 同链标的对照，并给价值捕获评分（5 维打分 + 卖铲子/制造平台/应用兑现/周期跟涨 定档）。
+- 结论必须分：
+  - 长期：配置价值、目标仓位、估值安全边际、季度复盘指标。
+  - 短期：趋势/事件交易、买入区、止损、止盈、催化剂、失效条件。
+
+交付前运行：
+
 ```bash
-python3 scripts/hl_price.py <TICKER> --candles 20    # 加 --json 取机读
-```
-取 `markPx`/`oraclePx`（→ `price_outlook.current`、短期杠杆入场/止损锚）、`funding`（多头持仓成本，年化进短期成本）、`maxLeverage`（短期杠杆上限）、日线区间。
-- 退出码 **3** = 该 ticker 未上 Hyperliquid `xyz` → **回退 WebSearch/WebFetch 取现货价**，并在 `data_freshness_note` 标注「价格源=现货，非 HL」。
-- HL 是衍生品 mark，与现货可有基差；若与现货明显背离，二者都记并以现货为估值基准。
-
-**机构目标价（必拉）**：用 WebSearch 取分析师/机构 12 个月目标价的 **高 / 中位 / 低 + 覆盖家数 + 代表机构与日期**（如 MarketBeat/TipRanks/Koyfin/Morningstar 公允价），作为 Step 4 自算 `fair_value_range` 之外的**外部交叉锚**，回填到 `analyst_targets`。
-
-再用 WebSearch / WebFetch 取 `as_of_date` 前后的一手基本面：最近季度营收/毛利/营业利润率、capex 及**二阶导**、guidance、RPO/backlog 及客户集中度、估值倍数（fwd P/E、EV/Rev、PEG、Rule of 40）、近 90 天 catalyst 日历（财报日、行业大会）。
-先核对**财年**（NVDA Feb-Jan、MSFT Jul-Jun、ORCL Jun-May…）再定 catalyst 时点。术语口径查 `knowledge/frameworks/valuation_toolkit.md`。
-
-### Step 3 · 填 4 维 thesis
-按 `knowledge/frameworks/thesis_4dim_template.yaml` 填一份 YAML：
-- WHAT = `view`(bull/bear/neutral/watching) + `supports`(3-5 条，**每条带数字+出处**)
-- WHY = `core_thesis`(1-2 句差异化判断) + `confidence`(high/medium/low)
-- SO WHAT = `catalysts_90d`(带日期+look_for) + `price_outlook`(current + base/bull/bear 锚定当前价)
-- RISKS = `red_flags`(2-3 条，**每条带可观察 trigger**)
-
-把填好的 YAML 写到临时文件并机检：
-```bash
-python3 scripts/validate_thesis.py <thesis.yaml> --as-of <as_of_date>
-```
-校验**不通过则回到对应维度补全**，直到 5 项全过。硬约束：90 天内无 catalyst → `confidence` 必须 low 或 `view: watching`。
-
-### Step 4 · 估值 + 安全边际（`knowledge/frameworks/valuation_toolkit.md`）
-- AI/成长股优先**反向 DCF**：反推当前价隐含增长，判断是否合理；辅以多重估值与历史/同业对比。
-- 给**公允价值区间**（非单点）；安全边际 = 区间下方 20-30% 才入场。
-- **机构目标价交叉锚**：把 Step 2 的 `analyst_targets`（高/中/低）与自算区间并排比，说明分歧来源（共识乐观/悲观、口径差异）；自算与机构差距大时优先解释分歧，不盲从。
-- 把关键术语数字（capex 二阶导、RPO 集中度、GAAP/non-GAAP gap、Rule of 40）回填进 supports / red_flags。
-
-### Step 5 · 交叉验证 + 偏差自检（`knowledge/frameworks/mental_models_and_biases.md`）
-- 5 心智模型：护城河四维打分、能力圈三问、逆向写 5 个失败场景+触发器。
-- 6 偏差自检：view 是确认偏误吗？price_outlook 锚定了买入价吗？是否 FOMO/近因驱动？
-- base rate：用 dotcom/mobile 锚 bear 档；2026-28 应用 ROI 滞后窗口，−30%~−50% 回撤纳入 bear 情景。
-
-### Step 6 · 仓位 + 输出判断（双角度，P2A-C4）
-结论必须分**两个独立角度**，因为同一 thesis 在不同久期/工具下动作可相反：
-
-**A. 长期 · 正股长期持有（股票账户）**
-- call = buy / hold / sell；仓位 ≈ 信念 × 赔率 ÷ 风险，由 confidence 映射。
-- 约束：单仓 ≤15-20%、留 15-20% 现金、板块 ≤50%、供应链 ≤40%（AI 供应链相关性高，别低估）。
-- 给**加仓区**（= 安全边际入场价，区间下方 20-30%）；长期看护城河 + value_capture_tier 决定久期，弱护城河/周期顶 → 不进长持。
-
-**B. 短期 · Hyperliquid 合约杠杆（perp）**
-- direction = long / short / 观望（看 90 天 catalyst 赔率 + 价格剧本，而非长期 thesis）。
-- **杠杆**：给保守区间且 **≤ `hl_price.py` 返回的 maxLeverage**（默认建议远低于上限，如 2-5x）；高波动/财报前进一步降杠杆。
-- 用 HL `mark` 锚定：**入场区 / 止损（必给，破 bear 触发即砍）/ 止盈（base→bull 区间）**。
-- **资金费成本**：引用年化 funding；做多且 funding 高（如年化 >20%）要在赔率里扣，必要时改观望或缩持仓时间。
-- 触发条件对齐 `price_outlook` 的 bull/bear `if`；red_flag trigger 触发即平仓。
-- ⚠️ 杠杆放大双向风险，强制止损；这是 trade 不是投资，仓位与正股分账管理。
-
-两角度可不一致（如长期 hold 观望、短期博财报小杠杆 long；或长期 buy、短期因 funding 高而观望），须各自给理由。按下方契约输出。
-
-## 输出渲染（由 `report` 决定）
-- **structured**：下方 §输出契约 的 YAML（存档/机读，进 `examples/`）。
-- **trader**：交易员速览，套 `assets/trader_report_template.md`（结论→为什么→催化剂→价格剧本→跑路信号，去术语、可直接挂单设止损）。速览由契约字段映射而来，模板内含渲染规则。
-  **最终输出 = 一份带日期的独立文件，写到 `reports/<TICKER>_<as_of_date>.md`**（如 `reports/MU_2026-06-15.md`），文件头含日期/信号/现价/仓位，文末附数据时点、来源、底稿 YAML 路径。
-- **both**（默认）：先 trader 速览，再附 structured 契约。
-
-无论哪种 report，**完整 thesis YAML 始终生成并经 `validate_thesis.py` 校验后存档**；trader 速览只是它的通俗渲染，不可脱离校验单独产出。
-
-## 输出契约（structured）
-```yaml
-one_liner_thesis: "≤30 字"
-chain_position:
-  role: ___          # upstream/midstream/downstream/customer/support
-  sub_segment: ___
-  moat_source: ___
-  value_capture_tier: ___   # 王者/二线/代工
-  depends_on: [___]
-  concentration_risks: [___]
-thesis_4dim: <填好且通过校验的 thesis_4dim_template.yaml>
-valuation:
-  method: ___        # 反向 DCF / 多重 / DCF
-  fair_value_range: "$___ - $___"
-  implied_growth: "___%"
-  margin_of_safety_entry: "$___"   # 区间下方 20-30%
-  analyst_targets:                 # 机构/分析师 12 个月目标价（外部交叉锚）
-    high: "$___"
-    median: "$___"
-    low: "$___"
-    coverage: "___ 家"
-    source: "___（机构/平台 + 日期）"
-hl_market:            # Hyperliquid 价格主源快照（hl_price.py；未上 HL 则注明现货回退）
-  mark: "$___"
-  oracle: "$___"
-  funding_annual_pct: "___%"
-  max_leverage: "___x"
-cross_check:
-  moat_score: "_/4"
-  circle_of_competence: pass | fail
-  inversion_scenarios: [___]       # 5 个失败场景+触发器
-  bias_flags: [___]                # 自检发现的偏差
-decision:
-  long_term:           # 正股长期持有（股票账户）
-    call: buy | hold | sell
-    target_position_pct: "___%"
-    add_zone: "$___ - $___"        # 安全边际加仓区（区间下方 20-30%）
-    rationale: "___"
-  short_term:          # Hyperliquid 合约杠杆（perp）
-    direction: long | short | 观望
-    leverage: "___x"               # 保守区间，≤ maxLeverage
-    entry: "$___ - $___"           # 锚 HL mark
-    stop_loss: "$___"              # 必给
-    take_profit: "$___ - $___"
-    funding_cost_note: "年化 ___%，多头持仓成本（已计入赔率）"
-    rationale: "___"
-  monitors:
-    catalysts: [{date, look_for}]
-    red_flag_triggers: [___]
-data_freshness_note: "数据核实于 <as_of_date>，价格源：<HL mark / 现货回退>，来源：<...>"
+python3 scripts/validate_a_share_report.py "reports/<日期> - <中文简称 代号> - A-share.md"
 ```
 
-最后附 `knowledge/frameworks/analysis_checklist.md` 的 **Review 节奏**（周/月/季）提醒。
+校验失败必须补全报告，不交付半成品。
+
+## 美股/海外路径（现有 AI 产业链流程）
+
+适用：美股/海外 AI 产业链个股、公司、板块或主题。
+
+执行 `knowledge/frameworks/analysis_checklist.md` 的 7 步：
+
+1. 一句话 thesis（≤30 字，先 WHAT 后 WHY）。
+2. 读取 `knowledge/frameworks/industry_chain_map.yaml` 做产业链定位。
+3. 拉实时数据。价格主源优先 `python3 scripts/hl_price.py <TICKER> --candles 20`；未上 Hyperliquid 时回退现货价，并标注来源。
+4. 按 `knowledge/frameworks/thesis_4dim_template.yaml` 填 4 维 thesis，运行 `scripts/validate_thesis.py`。
+5. 用 `knowledge/frameworks/valuation_toolkit.md` 做估值和安全边际。
+6. 用 `knowledge/frameworks/mental_models_and_biases.md` 做心智模型与偏差自检。
+7. 输出长期正股 / 短期 Hyperliquid 合约两个角度的结论。
+
+美股/海外最终报告写到 `reports/<日期> - <TICKER> - US.md`（见上方命名规范），完整 thesis YAML 存档到 `examples/`。
 
 ## 资产索引
-- 产业链定位：`knowledge/frameworks/industry_chain_map.yaml`
-- 4 维 schema + 范例：`knowledge/frameworks/thesis_4dim_template.yaml`
-- 估值 + 术语：`knowledge/frameworks/valuation_toolkit.md`
-- 心智模型 + 偏差 + base rate：`knowledge/frameworks/mental_models_and_biases.md`
-- 主流程 SOP：`knowledge/frameworks/analysis_checklist.md`
-- 交易员速览模板：`assets/trader_report_template.md`（`report: trader` 用）
-- 价格主源取数：`scripts/hl_price.py`（Hyperliquid 美股 perp，mark/oracle + 日线，无需 key）
-- thesis 校验器：`scripts/validate_thesis.py`
-- 回归样例（thesis 底稿 YAML）：`examples/`（nvda / mu，2026-06-15）
-- 最终交易员研报（带日期独立文件）：`reports/<TICKER>_<as_of_date>.md`
-- 深挖（可选）：`knowledge/part1_industry/`、`part2a_general/`、`part2b_ai_specific/` 逐章笔记（按 chapter/tag 检索）——因源自第三方课程**默认未随仓库分发**，主流程不依赖，存在则可用
+
+- 美股/海外主流程：`knowledge/frameworks/analysis_checklist.md`
+- 美股/海外产业链：`knowledge/frameworks/industry_chain_map.yaml`
+- 美股/海外 thesis schema：`knowledge/frameworks/thesis_4dim_template.yaml`
+- 通用估值与偏差：`knowledge/frameworks/valuation_toolkit.md`、`knowledge/frameworks/mental_models_and_biases.md`
+- A 股主流程：`knowledge/markets/a_share_workflow.md`
+- A 股数据源：`knowledge/markets/a_share_data_sources.md`
+- A 股产业链路径：`knowledge/markets/a_share_industry_chain_map.yaml`
+- A 股报告模板：`assets/a_share_report_template.md`
+- 美股交易员模板：`assets/trader_report_template.md`
+- 校验器：`scripts/validate_thesis.py`、`scripts/validate_a_share_report.py`

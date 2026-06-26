@@ -1,0 +1,173 @@
+meta:
+  name: A 股产业链路径分析框架
+  purpose: 给 A 股标的定位上游依赖、公司卡位、下游客户、卡点风险和同链对照。
+  data_caveat: >
+    本文件是产业链定位框架，不是实时事实库。任何份额、订单、财务、客户、估值数字
+    都必须在报告执行时用最新公告/财报/数据源复核。
+
+routing_rules:
+  - "先按主营业务归类，再按收入占比和利润贡献确认核心路径。"
+  - "一家公司可跨多个链条；报告中必须说明主路径和次路径。"
+  - "产业链定位不是投资结论；还需结合估值、现金流、周期位置和短期催化剂。"
+
+path_output_contract:
+  upstream: "关键设备/材料/零部件/资源依赖"
+  company_position: "公司的产品、工艺、客户认证、份额或国产替代位置"
+  downstream: "直接客户、终端行业、需求驱动"
+  bottlenecks: "进口限制、良率、产能、价格周期、客户集中、政策监管"
+  peers: "A 股同链可比 + 海外锚"
+  value_capture: "5 维评分（毛利率/ROIC/护城河来源/转换成本/客户黏性，各 1-5）+ 定档：卖铲子/制造平台/应用兑现/周期跟涨"
+  duration_view: "长持/周期/事件 trade/观察"
+
+chains:
+  - id: semiconductor_equipment
+    name_cn: 半导体设备
+    path: "零部件/材料 -> 设备整机 -> 晶圆厂/封测厂 -> 芯片设计/终端"
+    demand_drivers:
+      - 国产替代
+      - 晶圆厂扩产
+      - 先进封装与成熟制程设备需求
+      - 出口管制倒逼本土供应链
+    bottlenecks:
+      - 核心零部件国产化率
+      - 客户验证周期
+      - 先进制程能力边界
+      - 订单与收入确认错配
+    a_share_examples:
+      - { code: "688082", name: "盛美上海", role: "清洗/电镀/先进封装设备" }
+      - { code: "002371", name: "北方华创", role: "刻蚀/薄膜/热处理等平台型设备" }
+      - { code: "688012", name: "中微公司", role: "刻蚀/MOCVD" }
+      - { code: "688072", name: "拓荆科技", role: "薄膜沉积设备" }
+      - { code: "688037", name: "芯源微", role: "涂胶显影/清洗" }
+    overseas_anchors: [ASML, AMAT, LRCX, KLA]
+    duration_view: "强国产替代逻辑，但订单、毛利率和验证节奏决定短期弹性。"
+
+  - id: semiconductor_manufacturing
+    name_cn: 晶圆制造与封测
+    path: "设备/材料/EDA -> 晶圆制造/封测 -> 芯片设计 -> 终端应用"
+    demand_drivers:
+      - 国产芯片供应链安全
+      - 成熟制程扩产
+      - 先进封装需求
+      - AI/汽车/工业芯片需求
+    bottlenecks:
+      - 先进制程设备限制
+      - 折旧压力
+      - 稼动率周期
+      - 毛利率受价格周期影响
+    a_share_examples:
+      - { code: "688981", name: "中芯国际", role: "晶圆代工" }
+      - { code: "600584", name: "长电科技", role: "封测/先进封装" }
+      - { code: "002156", name: "通富微电", role: "封测/AMD 链" }
+      - { code: "603986", name: "兆易创新", role: "存储/MCU 设计" }
+    overseas_anchors: [TSM, Samsung, UMC, ASE]
+    duration_view: "重资产周期属性强，估值需看稼动率、折旧和资本开支回报。"
+
+  - id: ai_compute_china
+    name_cn: 国产算力与服务器
+    path: "芯片/光模块/PCB/电源 -> 服务器/整机/云平台 -> 模型训练/推理/政企应用"
+    demand_drivers:
+      - 国产 AI 芯片替代
+      - 政企智算中心建设
+      - 大模型训练和推理部署
+      - 信创与数据中心投资
+    bottlenecks:
+      - GPU/AI 芯片供给
+      - HBM/高速互联
+      - 客户订单真实性
+      - 毛利率和回款
+      - 算力利用率
+    a_share_examples:
+      - { code: "603019", name: "中科曙光", role: "服务器/算力基础设施" }
+      - { code: "000977", name: "浪潮信息", role: "AI 服务器" }
+      - { code: "300308", name: "中际旭创", role: "高速光模块" }
+      - { code: "300502", name: "新易盛", role: "高速光模块" }
+      - { code: "300394", name: "天孚通信", role: "光器件" }
+      - { code: "002916", name: "深南电路", role: "PCB/封装基板" }
+      - { code: "300476", name: "胜宏科技", role: "PCB" }
+    overseas_anchors: [NVDA, AVGO, ANET, COHR, SMCI]
+    duration_view: "短期弹性看订单和产业催化，长期看真实算力利用率与现金流兑现。"
+
+  - id: optical_module
+    name_cn: 光模块与光器件
+    path: "光芯片/光器件 -> 光模块 -> 交换机/服务器 -> 数据中心"
+    demand_drivers:
+      - 800G/1.6T 升级
+      - AI 数据中心互联
+      - 海外云厂商 capex
+      - CPO/LPO 技术路线变化
+    bottlenecks:
+      - 海外客户集中
+      - 技术路线切换
+      - 毛利率下行
+      - 汇率和关税
+    a_share_examples:
+      - { code: "300308", name: "中际旭创", role: "高速光模块" }
+      - { code: "300502", name: "新易盛", role: "高速光模块" }
+      - { code: "300394", name: "天孚通信", role: "光器件" }
+      - { code: "688498", name: "源杰科技", role: "光芯片" }
+    overseas_anchors: [COHR, LITE, AVGO, ANET]
+    duration_view: "景气弹性大，但客户 capex 二阶导和技术路线变化会快速重估。"
+
+  - id: new_energy
+    name_cn: 新能源车/锂电/光伏
+    path: "资源/材料/设备 -> 电池/组件/整车 -> 运营/终端需求"
+    demand_drivers:
+      - 全球新能源车销量
+      - 储能需求
+      - 光伏装机
+      - 技术迭代与成本下降
+    bottlenecks:
+      - 价格周期
+      - 产能过剩
+      - 海外贸易壁垒
+      - 应收和存货减值
+    a_share_examples:
+      - { code: "300750", name: "宁德时代", role: "动力/储能电池" }
+      - { code: "002594", name: "比亚迪", role: "整车+电池" }
+      - { code: "601012", name: "隆基绿能", role: "光伏硅片/组件" }
+      - { code: "300274", name: "阳光电源", role: "逆变器/储能" }
+    overseas_anchors: [TSLA, ENPH, FSLR]
+    duration_view: "强周期与强竞争并存，估值必须正常化毛利和现金流。"
+
+  - id: pharma_innovation
+    name_cn: 创新药与医疗器械
+    path: "研发平台/CXO/原料 -> 创新药/器械 -> 医院/药店/海外授权"
+    demand_drivers:
+      - 新药获批
+      - 医保/商保支付
+      - 海外授权
+      - 国产替代
+    bottlenecks:
+      - 临床失败
+      - 集采降价
+      - 现金消耗
+      - 海外监管
+    a_share_examples:
+      - { code: "600276", name: "恒瑞医药", role: "创新药平台" }
+      - { code: "688235", name: "百济神州", role: "创新药" }
+      - { code: "300760", name: "迈瑞医疗", role: "医疗器械" }
+      - { code: "603259", name: "药明康德", role: "CXO" }
+    overseas_anchors: [LLY, NVO, TMO]
+    duration_view: "长期看管线和全球化，短期看临床/审批/集采事件。"
+
+  - id: consumer
+    name_cn: 消费与品牌
+    path: "原料/渠道 -> 品牌/产品 -> 经销/直营/电商 -> 终端消费者"
+    demand_drivers:
+      - 居民收入
+      - 品牌力
+      - 渠道效率
+      - 价格带扩张
+    bottlenecks:
+      - 库存周期
+      - 渠道压货
+      - 价格体系破坏
+      - 人口与需求下行
+    a_share_examples:
+      - { code: "600519", name: "贵州茅台", role: "高端白酒" }
+      - { code: "000858", name: "五粮液", role: "高端白酒" }
+      - { code: "600887", name: "伊利股份", role: "乳制品" }
+      - { code: "603288", name: "海天味业", role: "调味品" }
+    overseas_anchors: [KO, PEP, COST, LVMUY]
+    duration_view: "成熟现金流资产，估值重心看 ROE 稳定性、分红和需求韧性。"
