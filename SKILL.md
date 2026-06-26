@@ -22,13 +22,12 @@ description: >
 
 ## 文件命名规范（两市统一）
 
-输出文件名格式：`reports/<日期> - <标的> - <市场>.md`
+输出文件名格式：`reports/<日期>_<标的>_<市场>.md`（用 `_` 分隔，文件名不含空格）
 
 - `<日期>`：`YYYY-MM-DD`（= `as_of_date`）。
-- `<标的>`：A 股用 `中文简称 代号`（如 `盛美上海 688082`）；美股/海外用 `TICKER`（如 `NVDA`）。
+- `<标的>`：A 股用 `中文简称代号`（名称与代号直接相连，不加空格，如 `盛美上海688082`）；美股/海外用 `TICKER`（如 `NVDA`）。
 - `<市场>`：英文。A 股 = `A-share`；美股/海外 = `US`。
-- 示例：`reports/2026-06-26 - 盛美上海 688082 - A-share.md`、`reports/2026-06-26 - NVDA - US.md`。
-- 文件名含空格，跑校验/命令时整体加引号。
+- 示例：`reports/2026-06-26_盛美上海688082_A-share.md`、`reports/2026-06-26_NVDA_US.md`。
 
 ## Step 0 · 市场识别（必须先做）
 
@@ -57,7 +56,7 @@ description: >
 
 核心输出：
 
-- 默认写入 `reports/<日期> - <中文简称 代号> - A-share.md`（见上方命名规范）。
+- 默认写入 `reports/<日期>_<中文简称代号>_A-share.md`（见上方命名规范）。
 - 深度报告包含 12 章：公司概况、五年经营、客户结构、股东结构、管理团队、行业格局、研发/capex、风险、估值、竞争对手、技术分析、综合结论。
 - 估值章节必须包含 WACC 逐步计算、FCF 基准推导、ROE×留存率增长锚、DCF 敏感性矩阵、DDM 三阶段、PE/PB/PEG 相对估值、杜邦三因子。
 - 产业链路径必须写清：上游依赖 → 公司卡位 → 下游客户/场景 → 卡点/替代/政策风险 → 同链标的对照，并给价值捕获评分（5 维打分 + 卖铲子/制造平台/应用兑现/周期跟涨 定档）。
@@ -68,7 +67,7 @@ description: >
 交付前运行：
 
 ```bash
-python3 scripts/validate_a_share_report.py "reports/<日期> - <中文简称 代号> - A-share.md"
+python3 scripts/validate_a_share_report.py reports/<日期>_<中文简称代号>_A-share.md
 ```
 
 校验失败必须补全报告，不交付半成品。
@@ -87,7 +86,7 @@ python3 scripts/validate_a_share_report.py "reports/<日期> - <中文简称 代
 6. 用 `knowledge/frameworks/mental_models_and_biases.md` 做心智模型与偏差自检。
 7. 输出长期正股 / 短期 Hyperliquid 合约两个角度的结论。
 
-美股/海外最终报告写到 `reports/<日期> - <TICKER> - US.md`（见上方命名规范），完整 thesis YAML 存档到 `examples/`。
+美股/海外最终报告写到 `reports/<日期>_<TICKER>_US.md`（见上方命名规范），完整 thesis YAML 存档到 `examples/`。
 
 ## 资产索引
 

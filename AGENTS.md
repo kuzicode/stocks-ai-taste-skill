@@ -8,9 +8,9 @@
 2. **美股/海外路径**：严格按现有 7 步流程执行（产业链定位 → 拉实时数据 → 4 维 thesis → 估值 → 偏差自检 → 双角度输出）。
 3. **美股价格主源 = Hyperliquid 美股 perp**：先跑 `python3 scripts/hl_price.py <TICKER>`（mark/oracle + 日线 + 资金费 + 最大杠杆，无需 key）；退出码 3=未上 HL→回退联网搜索现货价。
 4. **A 股路径**：读取 `knowledge/markets/a_share_workflow.md`，按最新数据源、产业链路径、12 章深度研报、估值三件套、长期/短期双角度执行。
-5. 美股最终报告写到 `reports/<日期> - <TICKER> - US.md`，4 维 thesis 底稿写到 `examples/<ticker>_<日期>.yaml`，并跑 `python3 scripts/validate_thesis.py` 机检通过。
-6. A 股研报写到 `reports/<日期> - <中文简称 代号> - A-share.md`，套 `assets/a_share_report_template.md`，并跑 `python3 scripts/validate_a_share_report.py` 机检通过。
-   - 命名规范（两市统一）：`reports/<YYYY-MM-DD> - <标的> - <市场>.md`；标的——A 股用 `中文简称 代号`、美股用 `TICKER`；市场——`A-share` / `US`。文件名含空格，命令需加引号。
+5. 美股最终报告写到 `reports/<日期>_<TICKER>_US.md`，4 维 thesis 底稿写到 `examples/<ticker>_<日期>.yaml`，并跑 `python3 scripts/validate_thesis.py` 机检通过。
+6. A 股研报写到 `reports/<日期>_<中文简称代号>_A-share.md`，套 `assets/a_share_report_template.md`，并跑 `python3 scripts/validate_a_share_report.py` 机检通过。
+   - 命名规范（两市统一）：`reports/<YYYY-MM-DD>_<标的>_<市场>.md`，用 `_` 分隔不含空格；标的——A 股用 `中文简称代号`（如 `盛美上海688082`）、美股用 `TICKER`；市场——`A-share` / `US`。
 7. 非 AI 产业链标的：美股/海外改用通用股票模型并显著免责；A 股仍按 A 股研报框架走，不强行套 AI 产业链。
 
 ## 项目结构

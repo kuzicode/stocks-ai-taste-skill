@@ -2,8 +2,8 @@
 """A 股 Markdown 研报校验器。
 
 用法:
-    python3 scripts/validate_a_share_report.py "reports/<日期> - <中文简称 代号> - A-share.md"
-    （文件名含空格，需整体加引号）
+    python3 scripts/validate_a_share_report.py reports/<日期>_<中文简称代号>_A-share.md
+    （文件名用 _ 分隔，不含空格，如 reports/2026-06-26_盛美上海688082_A-share.md）
 
 校验范围:
     1. 12 个深度报告章节齐全
