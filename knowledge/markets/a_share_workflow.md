@@ -18,7 +18,7 @@
 
 - `full`：单公司深度报告，12 章全覆盖。
 - `quick`：财报/事件速评，可压缩章节，但必须保留数据源、产业链位置、估值变化、长期/短期结论和风险触发器。
-- 默认输出：`reports/<日期> - <中文简称 代号> - A-share.md`（如 `reports/2026-06-26 - 盛美上海 688082 - A-share.md`）。日期 = `as_of_date`（`YYYY-MM-DD`）；市场固定英文 `A-share`。
+- 默认输出：`reports/<日期>_<中文简称代号>_A-share.md`（如 `reports/2026-06-26_盛美上海688082_A-share.md`）。用 `_` 分隔，文件名不含空格；日期 = `as_of_date`（`YYYY-MM-DD`）；市场固定英文 `A-share`。
 
 ## Step 1 · 标的识别与最新数据
 
@@ -120,11 +120,11 @@ Ke = RFR + beta * ERP
 ## Step 6 · 交付与校验
 
 1. 按 `assets/a_share_report_template.md` 生成 Markdown。
-2. 文件保存到 `reports/<日期> - <中文简称 代号> - A-share.md`（文件名含空格，命令需加引号）。
+2. 文件保存到 `reports/<日期>_<中文简称代号>_A-share.md`（用 `_` 分隔，不含空格）。
 3. 运行：
 
 ```bash
-python3 scripts/validate_a_share_report.py "reports/<日期> - <中文简称 代号> - A-share.md"
+python3 scripts/validate_a_share_report.py reports/<日期>_<中文简称代号>_A-share.md
 ```
 
 4. 校验失败则补齐再交付。
