@@ -1,0 +1,93 @@
+# 当期基准快照 — 带日期的「唯一数字出处」
+# 用途：其它 frameworks（industry_chain_map / valuation_toolkit / analysis_checklist）只写口径和规则，
+#       具体基准数统一放这里；过期就整份换新（下一份 = market_snapshot_2026Q4.yaml），旧文件保留做历史对照。
+# 时效规则：分析日距 as_of 超过 100 天 → 报告里必须注明「基准快照已过期」，关键数重新联网核实。
+# 可信度：verified = 已对照 SEC 8-K / 公司 IR 一手；secondary = 来自财经媒体转述，引用前回查一手。
+
+meta:
+  as_of: "2026-10-06"
+  next_refresh: "2027-01 上旬（hyperscaler Q4 财报季前）"
+  compiled_by: "2026-10-06 复盘（docs/plan.md 阶段 5）"
+
+# ---------- 1. AI capex（全链 de-rate 的总开关）----------
+hyperscaler_capex:
+  cy2026_guidance:            # 2026-07 末财报季更新后的公司指引
+    MSFT: { value: "~$190B（CY2026）", confidence: secondary, source: "2026-07 财报季媒体汇总" }
+    GOOGL: { value: "$195-205B（上调，原上限 $190B）；称 2027 将「显著增长」", confidence: secondary, source: "2026-07 Alphabet Q2 财报媒体报道" }
+    AMZN: { value: "~$220B（上调）", confidence: secondary, source: "2026-07-30 Amazon Q2 财报媒体报道" }
+    META: { value: "$125-145B（上调）", confidence: secondary, source: "2026-07 Meta Q2 财报媒体报道" }
+  big4_cy2026_total: { value: "~$725-760B", note: "四家指引加总；含 ORCL 的五家一致预期口径约 $800-845B" }
+  cy2027_street: { value: "四家 ~$0.95-1.2T；五家 ~$1.3T", confidence: secondary, note: "卖方区间分歧大，只看方向" }
+  reported_ttm_capex:          # sec_facts.py --capex 2026-10-06 实跑（SEC XBRL 一手，confidence: verified）
+    MSFT: "TTM $116.0B（截至 2026-06），TTM YoY +79.6%，二阶导 +21.1pp → 仍在加速"
+    GOOGL: "TTM $132.4B（截至 2026-06），TTM YoY +97.7%，二阶导 +7.3pp → 仍在加速"
+    AMZN: "TTM $173.0B（截至 2026-06），TTM YoY +60.7%，二阶导 -1.5pp → 走平"
+    META: "TTM $89.3B（截至 2026-06），TTM YoY +71.2%，二阶导 -1.8pp（此前两季 -19/-14pp）→ 走平"
+    ORCL: "TTM $75.7B（截至 2026-08），TTM YoY +176%，单季波动大"
+  second_derivative_read: >
+    已披露实际值（截至 2026Q2）：MSFT/GOOGL 的 TTM 增速仍在加速，AMZN/META 走平，四家合计还没出现二阶导转负。
+    「增速放缓」目前只体现在 2027 指引的隐含 YoY（约 +30-60%，低于 2026 年）。
+    → 7 月以来的「芯片 → 云厂商」轮动是市场在**提前交易**预期放缓，并不是实际数据已经放缓；
+      判断全链 de-rate 前，以 sec_facts.py 的 TTM 二阶导连续 2 季为负为准。
+  tracking: "python3 scripts/sec_facts.py --capex（季度实际 capex 序列 + YoY + 二阶导）"
+
+# ---------- 2. 关键公司当期数据（季度披露）----------
+companies:
+  NVDA:
+    period: "Q2 FY27（截至 2026-07-26，2026-08-26 公布）"
+    revenue: "$96.2B（+106% YoY，+18% QoQ）"
+    data_center: "$89.0B（+117% YoY，占比 >92%）"
+    gross_margin_gaap: "75.0%"
+    next_q_guide: "Q3 FY27 $108.0B ±2%，不含中国数据中心计算收入"
+    china: "指引口径已剔除中国数据中心 → 旧图里「中国约 14%」作废"
+    confidence: secondary
+    source: "NVIDIA Q2 FY27 财报媒体报道（2026-08-26/27）；引用前对照 8-K"
+  MU:
+    period: "FQ4 FY26（截至 2026-09-03，2026-09-30 公布）"
+    revenue: "$54.23B（FQ3 $41.46B；去年同期 $11.32B）"
+    gross_margin_gaap: "86.8%（FY26 全年 80.7%）"
+    fy26_revenue: "$133.19B（FY25 $37.38B）"
+    next_q_guide: "FQ1 FY27 ~$61.5B ±$1.5B"
+    cycle_note: "毛利率处于历史极值区 → 必须走 valuation_toolkit 方法 4（周期股估值）"
+    confidence: verified
+    source: "Micron 8-K ex99.1 press release 2026-09-30（sec.gov a2026q4ex991）"
+  SK_Hynix:
+    period: "Q2 2026（2026-07-29 公布）"
+    revenue: "KRW 79.32T（+51% QoQ，+257% YoY）"
+    operating_margin: "76%（历史新高）"
+    vs_consensus: "营收低于预期约 5.7%、营业利润约 5.5%"
+    lta: "约 10 家核心客户签长约（LTA）"
+    hbm_share: "~58%（2026Q1）"
+    cycle_note: "利润率创新高但低于预期 → 符合周期顶部预警表里的「好消息不涨」信号"
+    confidence: secondary
+    source: "SK hynix Q2 2026 财报媒体报道（2026-07-29）；引用前对照 DART"
+  AVGO:
+    period: "Q3 FY26（截至 2026-08-02，2026-09-02 公布）"
+    revenue: "$29.6B（+86% YoY）"
+    ai_semis: "$16.7B（+221% YoY，+54% QoQ）；Q4 指引 AI $21.7B"
+    next_q_guide: "Q4 FY26 营收 ~$34.8B"
+    fcf: "$13.7B（46% of revenue）"
+    confidence: verified
+    source: "Broadcom 8-K ex99 2026-09-02（sec.gov avgo-08022026x8kxex99）"
+
+# ---------- 3. 市场状态（季度级定性，短期判断的背景）----------
+regime:
+  h1_2026: "半导体上半年约翻倍"
+  jul_2026: "半导体大幅回撤 + 动量因子急跌（拥挤 AI/高 beta 仓位去杠杆）"
+  q3_2026_theme: "资金在『芯片供应商』与『云厂商 / AI 变现方』之间轮动；存储链在财报 beat 后仍下跌"
+  memory_thesis_review: "6 月 3 份存储链 bull thesis 90 天后全部跌破 bear 档（见 reports/2026-10-06_thesis复盘_US.md）"
+  source: "Franklin Templeton《Global Equity Pulse: AI's next phase》2026；Seeking Alpha 轮动讨论；review_theses.py 复盘"
+
+# ---------- 4. 一级市场 → 二级（客户层）----------
+ai_labs_listing_status:
+  Anthropic: { status: "2026-06-01 秘密递交 S-1，计划 Nasdaq 上市", confidence: secondary }
+  OpenAI: { status: "筹备 IPO，媒体称倾向 2027", confidence: secondary }
+  CRWV: { status: "已上市（2025-03）；Q1 2026 营收 $2.1B（+112%）", confidence: secondary }
+  rule: "实验室上市后归入 industry_chain_map 的 customer 角色，按「应用兑现」档 + 亏损成长股估值（EV/Revenue + 反向 DCF），不套王者档"
+
+# ---------- 5. Hyperliquid 股票永续 ----------
+hyperliquid_equity_perps:
+  share_of_perp_volume: "~50%（2026 年初约 2%）"
+  deployers: "xyz（TradeXYZ，HIP-3 股票 OI 90%+）为主；flx / km / cash / mkts / io / para 等多为冷门盘，常见 OI=0 且价格过期"
+  notable: "xyz:SP500（授权 S&P 500 永续）、xyz:XYZ100、xyz:SMH；SK Hynix 有 xyz:SKHX（本地股折美元）和 xyz:SKHY（ADR，2026-07 上线）两个盘"
+  source: "coinpaprika / 21shares H1 2026 报告；hl_price.py 2026-10-06 实测"
