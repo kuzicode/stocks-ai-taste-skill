@@ -22,12 +22,13 @@
 
 默认输出文件名格式：`reports/<日期>_<标的>_<市场>.md`（用 `_` 分隔，不含空格）
 
-- `<日期>` = `YYYY-MM-DD`；`<标的>` A 股/港股用 `中文简称代号`、美股用 `TICKER`；`<市场>` 用英文 `A-share` / `HK` / `US`。
+- `<日期>` = `YYYY-MM-DD`；`<标的>` A 股/港股用 `中文简称代号`、美股及韩台日用英文 `TICKER`；`<市场>` 用英文 `A-share` / `HK` / `US` / `KR` / `TW` / `JP`。
 - 示例：
   - A 股：`reports/2026-06-26_盛美上海688082_A-share.md`
   - 港股：`reports/2026-06-26_腾讯控股00700_HK.md`
   - 美股：`reports/2026-06-26_NVDA_US.md`
-- 美股/海外另存结构化底稿：`examples/<ticker>_<YYYY-MM-DD>.yaml`。
+- 美股/海外另存结构化底稿：`examples/<YYYY-MM-DD>_<TICKER>_<市场>.yaml`（含 `as_of_date` 字段）。
+- 复盘历史 thesis：`分析 复盘` 或 `mode=review` → `reports/<日期>_thesis复盘_US.md`。
 
 `reports/` 和 `examples/` 是运行期产物，默认不入库。
 
@@ -36,10 +37,10 @@
 `SKILL.md` 先判断市场：
 
 - A 股代码（6 位）/港股代码（5 位带 `.HK`）或对应中文公司名 → 读取 `knowledge/markets/a_share_workflow.md`（沪深港共用）
-- 美股/海外 ticker 或公司名 → 读取 `knowledge/frameworks/analysis_checklist.md`
+- 美股/海外 ticker 或公司名，以及韩台日 AI 链（`.KS` / `.TW` / `.T`）→ 读取 `knowledge/frameworks/analysis_checklist.md`
 - 不确定市场 → 先问用户确认，不猜
 
-A 股和港股都不使用 Hyperliquid 合约逻辑，只给长期配置与短期交易两个角度；港股按港交所披露易/南向资金/HKD 口径取数。美股/海外继续优先使用 `scripts/hl_price.py` 获取 Hyperliquid 美股 perp 行情，未覆盖时回退现货价格。
+A 股和港股都不使用 Hyperliquid 合约逻辑，只给长期配置与短期交易两个角度；港股按港交所披露易/南向资金/HKD 口径取数。美股/海外继续优先使用 `scripts/hl_price.py` 获取 Hyperliquid 美股 perp 行情（自动在各 HIP-3 dex 中选最活跃的盘），未覆盖时回退现货价格。存储/设备等周期股估值必须走「周期股估值」方法。
 
 ## 核心文件
 
@@ -49,10 +50,12 @@ AGENTS.md                        # agent 协作规则
 assets/
   trader_report_template.md      # 美股/海外交易员速览模板
   a_share_report_template.md     # A 股/港股 12 章 Markdown 模板
-knowledge/frameworks/            # 美股/海外 AI 产业链框架
+knowledge/frameworks/            # 美股/海外 AI 产业链框架（含 market_snapshot_<季度>.yaml 带日期基准数）
 knowledge/markets/               # A 股/港股流程、数据源、产业链路径
 scripts/
-  hl_price.py                    # Hyperliquid 美股 perp 行情
+  hl_price.py                    # Hyperliquid 美股 perp 行情（跨 dex、ATR14、MA50/200、交易时段）
+  sec_facts.py                   # SEC EDGAR 季度财务序列 / 云厂商 capex 二阶导
+  review_theses.py               # 历史 thesis 复盘命中表
   validate_thesis.py             # 美股/海外 4 维 thesis 校验
   validate_a_share_report.py     # A 股/港股研报结构校验
 ```
@@ -71,13 +74,16 @@ git clone <repo> ~/.openclaw/skills/ai-stock-analysis
 
 - Python 3.8+
 - A 股校验器只依赖标准库
-- `validate_thesis.py` 需要 PyYAML
+- `validate_thesis.py` / `review_theses.py` 需要 PyYAML
+- `sec_facts.py` 建议设置 `SEC_USER_AGENT="<名字或项目> <邮箱>"`（SEC 要求带联系方式；未设置时用占位 UA）
 - agent 需要文件读写、Shell、联网检索/抓取能力
 
 ## 验证
 
 ```bash
-python3 scripts/validate_thesis.py examples/<ticker>_<date>.yaml --as-of <date>
+python3 scripts/validate_thesis.py examples/<日期>_<TICKER>_<市场>.yaml   # 按文件内 as_of_date 校验
+python3 scripts/review_theses.py --write                                   # 复盘全部历史 thesis
+python3 scripts/sec_facts.py --capex                                       # 云厂商 capex 二阶导
 python3 scripts/validate_a_share_report.py reports/<日期>_<标的>_<市场>.md
 ```
 

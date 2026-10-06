@@ -4,7 +4,9 @@
 meta:
   source_chapters: [P1-C5, P1-C6, P1-C7]
   read_date: 2026-06-15
-  ticker_count_confirmed: 52        # 原文称约 60，明确可列约 52
+  last_updated: 2026-10-06          # 补存储/HDD、测试、玻璃、光互联、新电力、矿企 neocloud；周期标记；相对 de-rate 触发器
+  ticker_count_confirmed: 52        # 原文称约 60，明确可列约 52（2026-10 补充后共 60 条目，含跨角色重复）
+  snapshot: market_snapshot_2026Q3.yaml   # 当期数字一律查这里；本文件的 value_capture 数字是 2025 原文口径，仅作相对排序
   data_caveat: >
     所有财务数字（毛利率/营业利润率/capex/份额）均为原文快照或估算，时变性高，
     使用前必须回查最新 10-K / 10-Q / 财报电话会一手披露，勿直接引用本文件数值。
@@ -24,6 +26,8 @@ moat_source_ranking:
 # 5 维价值捕获评分维度（P1-C7，每维 1-5）
 value_capture_dimensions: [毛利率, ROIC, Moat来源, 替代成本, 客户粘性]
 
+# cyclical: true → 估值必须走 valuation_toolkit「方法 4 · 周期股估值」（正常化 P/E + 周期位置），
+#   value_capture 里的峰值利润率不能直接当护城河证据。
 # 一只票可跨多个角色（如 VST=Downstream+Support；META/GOOGL=Downstream+Customer）
 roles:
 
@@ -45,18 +49,27 @@ roles:
         moat: 资本密度（年 $40B+ capex）+ 工艺寡头
         value_capture: { gross_margin: "55%", op_margin: "47%", roic: "高", moat_score: 4, tier: 二线 }
         chokepoint: 台海地缘；AAPL 占营收约 25%
-      - { ticker: AMAT, sub_segment: 半导体设备, role_note: 沉积/刻蚀, moat: 资本密度+制程 know-how }
-      - { ticker: LRCX, sub_segment: 半导体设备, role_note: 刻蚀/清洗, moat: 先进节点壁垒 }
-      - { ticker: KLA, sub_segment: 半导体设备, role_note: 量检测, moat: 制程检测 know-how }
+      - { ticker: AMAT, sub_segment: 半导体设备, role_note: 沉积/刻蚀, moat: 资本密度+制程 know-how, cyclical: true }
+      - { ticker: LRCX, sub_segment: 半导体设备, role_note: 刻蚀/清洗, moat: 先进节点壁垒, cyclical: true }
+      - { ticker: KLA, sub_segment: 半导体设备, role_note: 量检测, moat: 制程检测 know-how, cyclical: true }
+      - { ticker: TER, sub_segment: 测试设备, role_note: SoC/HBM 测试机, moat: 测试平台双寡头（与 Advantest）, cyclical: true, added: 2026-10 }
+      - { ticker: Advantest, sub_segment: 测试设备, role_note: GPU/HBM 测试机龙头, moat: NVDA 测试平台份额, status: 日股 6857.T, cyclical: true, added: 2026-10 }
+      - { ticker: FORM, sub_segment: 探针卡, role_note: HBM/先进封装探针卡, moat: 定制化+认证, cyclical: true, added: 2026-10 }
       - { ticker: SNPS, sub_segment: EDA 设计软件, role_note: 逻辑/模拟设计, moat: 设计流程不可替代（与 CDNS 双寡头） }
       - { ticker: CDNS, sub_segment: EDA 设计软件, role_note: 验证/仿真, moat: 与 SNPS 双寡头 }
       - ticker: SK Hynix
         sub_segment: HBM 存储
-        role_note: NVIDIA 70%+ HBM 供应
-        moat: HBM 验证难度 + 制造精度
+        role_note: HBM 份额第一（2026Q1 约 58%，见 snapshot）
+        moat: HBM 验证难度 + 制造精度 + 约 10 家客户长约
         chokepoint: HBM 验证（qualification）是进入 NVDA 供应链门槛
-      - { ticker: MU, sub_segment: HBM 存储, role_note: 次要 HBM 供应商, moat: Samsung 验证延迟受益, value_capture: { gross_margin: "35-45%", fwd_pe: "8-10x" } }
-      - { ticker: Samsung, sub_segment: HBM 存储, role_note: HBM3E（验证延迟）, moat: 相对 SK Hynix 验证滞后, status: 非美股 }
+        cyclical: true
+        listing: "KRX 000660.KS（本地股）；美国 ADR（2026-07 上市）；HL perp xyz:SKHX（本地股折美元）/ xyz:SKHY（ADR）"
+      - { ticker: MU, sub_segment: HBM/DRAM/NAND 存储, role_note: 美股唯一 DRAM+HBM 厂, moat: HBM 份额提升 + 美国本土产能, cyclical: true, value_capture_note: "2026 毛利率 80%+ 是周期峰值，不是结构性护城河；当期数字见 snapshot" }
+      - { ticker: Samsung, sub_segment: HBM 存储, role_note: HBM3E/HBM4 追赶, moat: 规模最大但 HBM 验证滞后, status: 韩股 005930.KS, cyclical: true }
+      - { ticker: SNDK, sub_segment: NAND/企业级 SSD, role_note: AI 推理存储 + HBF（高带宽闪存）, moat: NAND 寡头之一（与 Kioxia 合资产能）, cyclical: true, added: 2026-10 }
+      - { ticker: WDC, sub_segment: HDD 大容量存储, role_note: 数据中心冷数据, moat: HDD 双寡头（与 STX）, cyclical: true, added: 2026-10 }
+      - { ticker: STX, sub_segment: HDD 大容量存储, role_note: HAMR 高容量盘, moat: HDD 双寡头, cyclical: true, added: 2026-10 }
+      - { ticker: GLW, sub_segment: 光纤/玻璃基板, role_note: 数据中心光纤光缆 + 先进封装玻璃基板, moat: 材料工艺 know-how, added: 2026-10 }
       - { ticker: INTC, sub_segment: 代工/IDM, role_note: IFS 竞争代工, moat: 节点切换落后 TSM }
 
   - id: midstream
@@ -67,14 +80,18 @@ roles:
     tickers:
       - ticker: NVDA
         sub_segment: GPU / 加速器
-        role_note: H100/H200/Blackwell；数据中心约 88% 营收
+        role_note: Blackwell/Rubin；数据中心占营收 >92%（Q2 FY27）
         moat: CUDA 20 年生态 + Mellanox 互联 + 平台（切换需重写 ML 代码）
         value_capture: { gross_margin: "75%", op_margin: "60%", roic: "高", moat_score: 5, tier: 王者 }
         depends_on: [ASML, TSM, SK Hynix, COHR, LITE, AVGO]   # 隐性上游依赖
-        chokepoint: HBM 单点供应；中国份额受出口管制（FY25 约 14%）
+        chokepoint: HBM 单点供应；中国数据中心已从指引中剔除（Q3 FY27 起）
       - { ticker: AMD, sub_segment: GPU / 加速器, role_note: MI300X 竞品, moat: ROCm 软件栈较弱, value_capture: { gross_margin: "50%", op_margin: "11-12%", moat_score: "2-3", tier: 弱 } }
-      - { ticker: AVGO, sub_segment: 网络/交换/定制硅, role_note: 高速互联 + 定制 ASIC, moat: 互联架构主导 }
-      - { ticker: MRVL, sub_segment: 存储/网络芯片, role_note: DPU 数据平面, moat: 基础设施芯片 }
+      - { ticker: AVGO, sub_segment: 定制 ASIC/网络交换, role_note: TPU 等定制加速器 + Tomahawk 交换；AI 半导体收入增速高于 NVDA（见 snapshot）, moat: 定制硅设计 + 互联架构主导 }
+      - { ticker: MRVL, sub_segment: 定制 ASIC/光电 DSP, role_note: Trainium 等定制硅 + 光模块 DSP, moat: 基础设施芯片；单一 socket 得失影响大 }
+      - { ticker: CRDO, sub_segment: 高速互联, role_note: AEC 有源铜缆 + SerDes, moat: 机柜内短距互联先发, added: 2026-10 }
+      - { ticker: ALAB, sub_segment: 高速互联, role_note: PCIe/CXL retimer + 交换, moat: 机柜互联协议栈, added: 2026-10 }
+      - { ticker: CIEN, sub_segment: 光传输, role_note: 数据中心互联（DCI）相干光, moat: 相干光模块与系统, added: 2026-10 }
+      - { ticker: FN, sub_segment: 光模块代工, role_note: 800G/1.6T 光模块制造, moat: 精密光学代工（客户集中）, added: 2026-10 }
       - { ticker: ANET, sub_segment: 数据中心网络, role_note: 25/100/400G 交换 ASIC, moat: 超大规模客户偏好 }
       - { ticker: COHR, sub_segment: 光模块, role_note: 400G/800G 光收发, moat: NVDA 依赖 + 光子供应, signal: 光模块涨价/积压=capex 加速先行信号 }
       - { ticker: LITE, sub_segment: 光模块, role_note: 与 COHR 共供光子, moat: 光子学协同供应 }
@@ -99,15 +116,18 @@ roles:
       - { ticker: CRWV, sub_segment: neocloud, role_note: 纯 AI 算力租赁, moat: 客户高集中, value_capture: { gross_margin: "30%", op_margin: 亏损, moat_score: 低 }, risk: "约 60% 依赖 MSFT；与 NVDA 循环融资疑虑" }
       - { ticker: NBIS, sub_segment: neocloud, role_note: 企业 AI 基建（Nebius）, moat: 新兴玩家, partner: Oracle OCI }
       - { ticker: VST, sub_segment: neocloud+电力, role_note: 电力+冷却+算力一体化, cross_role: support }
+      - { ticker: IREN, sub_segment: neocloud, role_note: 比特币矿企转 AI 算力（自有电力+场地）, moat: 低价电力与已并网场地, risk: 客户集中 + 融资依赖, added: 2026-10 }
+      - { ticker: APLD, sub_segment: neocloud/托管, role_note: AI 数据中心开发与托管, moat: 场地与电力, risk: 单一大客户租约, added: 2026-10 }
 
   - id: customer
     name_cn: 客户（AI 实验室 / 基础模型）
     metaphor: 用算力的
     moat_depth: 浅（模型能力+训练数据+推理效率；API 易切换）
     margin_band: "多为私募/亏损，盈利路径不清"
+    listing_rule: "上市后仍归本角色：估值用 EV/Revenue + 反向 DCF，价值捕获定「应用兑现」档，不套王者档"
     tickers:
-      - { entity: OpenAI, model: GPT-4o/o1, status: 私有（隐含 $80B+ ARR，严重亏损）, infra: Azure 独家→多云(MSFT/ORCL/AWS/CRWV/Google), moat: 品牌+用户+数据飞轮 }
-      - { entity: Anthropic, model: Claude, status: 私募融资, infra: 多云（AWS 为主）, moat: 模型能力+安全定位 }
+      - { entity: OpenAI, model: GPT 系列, status: 私有，筹备 IPO（见 snapshot）, infra: Azure 独家→多云(MSFT/ORCL/AWS/CRWV/Google), moat: 品牌+用户+数据飞轮 }
+      - { entity: Anthropic, model: Claude, status: 私有，2026-06 秘密递交 S-1（见 snapshot）, infra: 多云（AWS 为主）, moat: 模型能力+安全定位 }
       - { entity: xAI, model: Grok, status: 私有, infra: 自建+自研芯片规划 }
       - { entity: Mistral, model: 开源, status: 欧洲替代, infra: 自建 }
       - { entity: DeepSeek, model: R1/V3, status: 中国，受出口管制, infra: 华为 Ascend }
@@ -124,6 +144,8 @@ roles:
       - { ticker: CEG, sub_segment: 核电, role_note: 核电 PPA 合约, moat: 核电牌照+长约稀缺, signal: 电力 PPA 公告→6-12 月后 GPU/HBM 需求 }
       - { ticker: VST, sub_segment: 燃气电力, role_note: 燃气轮机+电力, cross_role: downstream }
       - { ticker: GEV, sub_segment: 发电设备, role_note: 燃气轮机/风光, moat: 电网设备 }
+      - { ticker: BE, sub_segment: 现场发电, role_note: 固体氧化物燃料电池（表后供电，绕开并网排队）, moat: 部署速度, added: 2026-10 }
+      - { ticker: OKLO, sub_segment: 小型核电（SMR）, role_note: 数据中心专供核电（尚未商运）, moat: 牌照进度, risk: 无收入、估值靠远期, added: 2026-10 }
       - { ticker: VRT, sub_segment: 液冷, role_note: 热管理, moat: 高密度 GPU 机架必需 }
       - { ticker: ETN, sub_segment: 配电, role_note: PDU/UPS, moat: 数据中心配电 }
       - { ticker: HUBB, sub_segment: 电气基建, role_note: 连接器/布线, moat: 模块化数据中心 }
@@ -143,8 +165,10 @@ chokepoint_chains:
     path: "CEG(核电 PPA)/VST(燃气)/GEV(可再生) → 数据中心电网 → 超大规模 capex"
     break_effect: 电力不足 → 数据中心 capex 延迟
 
-# 全链 de-rate 触发器（leading indicator）
+# 全链 de-rate 触发器（leading indicator）— 2026-10 改为相对口径，绝对额见 snapshot
 chain_derate_triggers:
-  - "hyperscaler capex 指引持平或下调（capex 二阶导=0）"
-  - "应用层 revenue 无法支撑约 $725B/yr capex（见 P1-C8）"
-  - "主要云厂商 FY27 capex 指引 YoY 增速 <10%"
+  - "hyperscaler capex 二阶导：下一年指引 YoY 增速较本年明显放缓（2027 指引已隐含放缓，但截至 2026Q2 实际 TTM 仍未转负，见 snapshot）→ 先 de-rate 卖铲子环节的估值倍数，云厂商相对受益（7 月轮动即此）"
+  - "hyperscaler capex 指引持平或下调（一阶导≤0）→ 全链 de-rate"
+  - "卖方对下一年 capex 一致预期连续两个季度下修"
+  - "应用层收入 / AI 实验室 ARR 增速跟不上 capex 增速（实验室上市后可直接从财报读）"
+  - "周期股专用：存储合约价环比转跌，或 beat 后股价不涨（见 valuation_toolkit 方法 4 的信号表）"

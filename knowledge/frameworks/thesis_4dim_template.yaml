@@ -2,7 +2,7 @@
 # 主数据源：P2B-C2（4 维框架）+ P2B-C5（写 thesis 的纪律）
 # 核心铁律：「4 维不缺一维 —— 缺哪维, thesis 就在那里破。」
 #
-# 4 维 → 6 个内容字段（不含 ticker）映射：
+# 4 维 → 6 个内容字段（不含 ticker / as_of_date）映射：
 #   WHAT     = view + supports              （现在的叙事？什么证据？）
 #   WHY      = core_thesis + confidence     （我比市场多看到什么？多确信？）
 #   SO WHAT  = catalysts_90d + price_outlook（何时验证？价格怎样？）
@@ -12,6 +12,7 @@
 
 # ============ 填空模板（复制此块开始写）============
 ticker: ___
+as_of_date: "____-__-__"  # 必填：本 thesis 的分析日期。校验器以它（而非今天）判断 90 天窗口；review 模式以它对照后续实际
 
 # --- WHAT ---
 view: ___              # 必填且四选一: bull / bear / neutral / watching（不允许"看不出来"）
@@ -54,12 +55,14 @@ red_flags:            # 2-3 条，每条 trigger 必须是可观察条件（把 
 # 3. 每条 red_flag 都有可观察 trigger
 # 4. 90 天内至少有一个 catalyst（否则 confidence=low / view=watching）
 # 5. price_outlook 锚定在当前价上
+# （附加机检，存在 decision.short_term 时）杠杆 ≤ hl_market.max_leverage；止损在入场区正确一侧
 #
 # 反馈闭环：catalyst 把 thesis 钉在 90 天窗口 → 每季证实/证伪 → 校准 → 累积能力增长
 
 ---
 # ============ 已填范例（NVDA，2026-05 财报前，源自 P2B-C2）============
 ticker: NVDA
+as_of_date: "2026-05-10"
 view: bull
 confidence: medium        # bull 但 medium：因有客户质量风险（CRWV 循环融资）
 core_thesis: |

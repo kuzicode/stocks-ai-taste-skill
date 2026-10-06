@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-06-26
+last_updated: 2026-10-06
 status: active
 owner: kumata
 ---
@@ -35,7 +35,9 @@ owner: kumata
 
 ## 外部集成
 
-- 美股/海外行情：`scripts/hl_price.py` 调 Hyperliquid 公开 info API；未覆盖时由 agent 联网回退现货价格。
+- 美股/海外行情：`scripts/hl_price.py` 调 Hyperliquid 公开 info API（遍历 HIP-3 dex，按成交额选盘，冷门盘 OI=0 视为过期）；未覆盖时由 agent 联网回退现货价格。
+- 美股财务：`scripts/sec_facts.py` 调 SEC EDGAR companyfacts（XBRL，季度值由 YTD 相减还原）；UA 由环境变量 `SEC_USER_AGENT` 提供。
+- 复盘：`scripts/review_theses.py` 复用 hl_price 日线与 validate_thesis 解析函数，对照 thesis 的 90 天窗口。
 - 美股/海外基本面：SEC filings、公司财报、电话会、机构目标价平台和权威财经来源。
 - A 股数据：公司公告、交易所、巨潮资讯、东方财富、同花顺 thsdk/wencai、Wind/Choice/Tushare（可用则用）。
 
@@ -52,7 +54,7 @@ owner: kumata
 美股/海外：
 
 ```bash
-python3 scripts/validate_thesis.py examples/<ticker>_<date>.yaml --as-of <date>
+python3 scripts/validate_thesis.py examples/<日期>_<TICKER>_<市场>.yaml   # as-of 取文件内 as_of_date
 ```
 
 A 股：

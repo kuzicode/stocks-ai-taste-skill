@@ -28,6 +28,9 @@ knowledge/part2b_ai_specific/
 /examples/*
 !/examples/.gitkeep
 
+# ── 本地 agent 工作区 ──
+.workbuddy/
+
 # ── 运行期临时文件 ──
 *.tmp
 .cache/

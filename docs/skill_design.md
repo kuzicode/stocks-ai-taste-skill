@@ -49,13 +49,14 @@
 - **逐章笔记**：作为深挖时的 RAG 检索源（按 tag / chapter 检索）。
 
 ## 5. 需要的外部数据源（知识库之外）
-- **实时行情主源 = Hyperliquid 美股 perp**（`scripts/hl_price.py`，dex=`xyz`，符号 `xyz:<TICKER>`）：`markPx`/`oraclePx` + 日线 `candleSnapshot` + `funding`（短期杠杆成本）+ `maxLeverage`，公开无需 key；未上 HL 才回退 WebSearch 现货价。
+- **实时行情主源 = Hyperliquid 美股 perp**（`scripts/hl_price.py`，默认遍历全部 HIP-3 dex 选最活跃的盘，通常为 `xyz:<TICKER>`）：`markPx`/`oraclePx` + 日线 `candleSnapshot` + `funding`（短期杠杆成本）+ `maxLeverage`，公开无需 key；未上 HL 才回退 WebSearch 现货价。
 - **机构/分析师目标价**（高/中/低 + 家数 + 来源）：与自算公允价并列做交叉锚。
 - 估值倍数（fwd P/E、EV/Rev 等）。
 - 最新财报：10-K/10-Q、电话会、guidance、segment revenue、RPO/backlog、capex 及二阶导、客户集中度。
 - catalyst 日历（财报日、行业大会如 GTC）；财年口径核对。
 - 13F（注意滞后 6 周、不含空头/期权）。
-- 候选工具：`scripts/hl_price.py`（价格主源）/ WebSearch / WebFetch / 财经数据 API。
+- 候选工具：`scripts/hl_price.py`（价格主源）/ `scripts/sec_facts.py`（SEC 一手财务序列）/ WebSearch / WebFetch / 财经数据 API。
+- 当期基准数：`knowledge/frameworks/market_snapshot_<季度>.yaml`（带日期，季度刷新）。
 
 ## 6. SKILL.md 骨架草图（仅蓝图，未实现）
 ```
